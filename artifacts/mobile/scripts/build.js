@@ -8,6 +8,17 @@ let metroProcess = null;
 
 const projectRoot = path.resolve(__dirname, "..");
 
+function getPnpmSpawnConfig(args) {
+  if (process.platform !== "win32") {
+    return { command: "pnpm", args };
+  }
+
+  return {
+    command: process.env.ComSpec || "cmd.exe",
+    args: ["/d", "/s", "/c", ["pnpm", ...args].join(" ")],
+  };
+}
+
 function findWorkspaceRoot(startDir) {
   let dir = startDir;
   while (dir !== path.dirname(dir)) {
@@ -139,23 +150,26 @@ async function startMetro(expoPublicDomain, expoPublicReplId) {
   const env = {
     ...process.env,
     EXPO_PUBLIC_DOMAIN: expoPublicDomain,
-    EXPO_PUBLIC_REPL_ID: expoPublicReplId,
   };
 
   if (expoPublicReplId) {
     console.log(`Setting EXPO_PUBLIC_REPL_ID=${expoPublicReplId}`);
+    env.EXPO_PUBLIC_REPL_ID = expoPublicReplId;
   }
 
+  const metroArgs = [
+    "exec",
+    "expo",
+    "start",
+    "--no-dev",
+    "--minify",
+    "--localhost",
+  ];
+  const pnpmSpawn = getPnpmSpawnConfig(metroArgs);
+
   metroProcess = spawn(
-    "pnpm",
-    [
-      "exec",
-      "expo",
-      "start",
-      "--no-dev",
-      "--minify",
-      "--localhost",
-    ],
+    pnpmSpawn.command,
+    pnpmSpawn.args,
     {
       stdio: ["ignore", "pipe", "pipe"],
       detached: false,

@@ -1,230 +1,257 @@
-# [Project name]
+# Platform Learn
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+Platform Learn adalah monorepo TypeScript untuk aplikasi Online Learning System. Repo ini berisi mobile app berbasis Expo, API server berbasis Express, shared database package berbasis Drizzle ORM, OpenAPI contract, generated React Query client, dan generated Zod schemas.
 
-## Run & Operate
+## Status Project
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
-- `pnpm run typecheck` — full typecheck across all packages
-- `pnpm run build` — typecheck + build all packages
-- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
-- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
+Project saat ini berada pada tahap fondasi dan prototype:
 
-## Stack
+- Mobile app sudah memiliki flow demo untuk role `student`, `instructor`, dan `admin`.
+- Data mobile masih memakai seed data lokal dan `AsyncStorage`.
+- API server yang aktif saat ini baru endpoint health check: `GET /api/healthz`.
+- OpenAPI spec saat ini baru mendokumentasikan health check.
+- Database schema sudah tersedia di package `@workspace/db` dan dapat di-push ke PostgreSQL dengan Drizzle Kit.
 
-- pnpm workspaces, Node.js 24, TypeScript 5.9
-- API: Express 5
-- DB: PostgreSQL + Drizzle ORM
-- Validation: Zod (`zod/v4`), `drizzle-zod`
-- API codegen: Orval (from OpenAPI spec)
-- Build: esbuild (CJS bundle)
+## Tech Stack
 
-## Where things live
+- Monorepo: pnpm workspaces
+- Language: TypeScript
+- Runtime: Node.js 24
+- Mobile: Expo, React Native, Expo Router, React Query
+- API: Express 5, CORS, Pino logger
+- Database: PostgreSQL, Drizzle ORM, Drizzle Kit
+- Contract: OpenAPI 3.1
+- Codegen: Orval untuk React Query client dan Zod schemas
+- Build: esbuild untuk API server
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+## Struktur Workspace
 
-## Architecture decisions
+```text
+platform_learn/
+  artifacts/
+    api-server/          Express API server
+    mobile/              Expo React Native app
+    mockup-sandbox/      Vite preview sandbox untuk komponen UI/mockup
+  lib/
+    api-client-react/    Generated React Query client dari OpenAPI
+    api-spec/            Source of truth OpenAPI spec dan Orval config
+    api-zod/             Generated Zod schemas dari OpenAPI
+    db/                  Drizzle ORM client dan database schema
+  scripts/               Utility scripts
+```
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+## Package Penting
 
-## Product
+| Package | Lokasi | Fungsi |
+| --- | --- | --- |
+| `@workspace/api-server` | `artifacts/api-server` | Backend Express API |
+| `@workspace/mobile` | `artifacts/mobile` | Aplikasi Expo/React Native |
+| `@workspace/mockup-sandbox` | `artifacts/mockup-sandbox` | Preview sandbox untuk komponen |
+| `@workspace/db` | `lib/db` | Koneksi database dan schema Drizzle |
+| `@workspace/api-spec` | `lib/api-spec` | OpenAPI spec dan codegen |
+| `@workspace/api-client-react` | `lib/api-client-react` | Generated React Query client |
+| `@workspace/api-zod` | `lib/api-zod` | Generated Zod validators |
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+## Setup Awal
 
-## User preferences
+Install dependency dari root repo:
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+```powershell
+pnpm install
+```
 
-## Gotchas
+Siapkan PostgreSQL lalu isi environment variable yang diperlukan.
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+Root `.env.example`:
 
-## Pointers
+```env
+DATABASE_URL=postgresql://user:password@localhost:5432/platform_learn
+PORT=5000
+NODE_ENV=development
+```
 
-- See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details
+API server membaca root `.env` melalui path `../../.env` dari folder `artifacts/api-server`.
 
-## 📁 Struktur Folder Lengkap Platform_Learn
+Untuk Drizzle command di package database, pastikan `DATABASE_URL` juga tersedia untuk `lib/db`, misalnya melalui `lib/db/.env`:
 
-📦 d:\platform_learn
-│
-├── 📄 Root Files
-│   ├── package.json (workspace monorepo)
-│   ├── pnpm-lock.yaml
-│   ├── pnpm-workspace.yaml
-│   ├── tsconfig.base.json
-│   ├── tsconfig.json
-│   ├── README.md
-│   ├── .npmrc
-│   ├── .gitignore
-│   ├── .hintrc
-│   └── .replit
-│
-├── 🗂️ .agents/ (Git Agents)
-├── 🗂️ .git/ (Version Control)
-├── 🗂️ .local/ (Local config)
-├── 🗂️ node_modules/ (Dependencies)
-│
-├── 📦 artifacts/ (Project Artifacts)
-│   ├── api-server/ (Backend Express/Node.js)
-│   │   ├── src/
-│   │   │   ├── app.ts
-│   │   │   ├── index.ts
-│   │   │   ├── lib/
-│   │   │   │   └── logger.ts
-│   │   │   ├── middlewares/ (.gitkeep)
-│   │   │   └── routes/
-│   │   │       ├── index.ts
-│   │   │       ├── health.ts
-│   │   │       ├── assignments.ts
-│   │   │       ├── course.ts
-│   │   │       └── user.ts
-│   │   ├── dist/ (Build output)
-│   │   ├── build.mjs
-│   │   ├── package.json
-│   │   ├── tsconfig.json
-│   │   ├── .env
-│   │   ├── .replit-artifact/
-│   │   └── node_modules/
-│   │
-│   ├── mobile/ (React Native - Expo)
-│   │   ├── app/ (File-based routing)
-│   │   │   ├── index.tsx (Home)
-│   │   │   ├──_layout.tsx
-│   │   │   ├── +not-found.tsx
-│   │   │   ├── (tabs)/ (Tab navigation)
-│   │   │   │   ├── _layout.tsx
-│   │   │   │   └── index.tsx
-│   │   │   ├── (auth)/ (Auth flows)
-│   │   │   │   ├──_layout.tsx
-│   │   │   │   └── login.tsx
-│   │   │   ├── (admin)/ (Admin panel)
-│   │   │   │   ├── _layout.tsx
-│   │   │   │   ├── index.tsx
-│   │   │   │   ├── users.tsx
-│   │   │   │   ├── courses.tsx
-│   │   │   │   └── settings.tsx
-│   │   │   ├── (instructor)/ (Instructor dashboard)
-│   │   │   │   ├──_layout.tsx
-│   │   │   │   ├── index.tsx
-│   │   │   │   ├── courses.tsx
-│   │   │   │   ├── assignments.tsx
-│   │   │   │   └── profile.tsx
-│   │   │   ├── (student)/ (Student dashboard)
-│   │   │   │   ├── _layout.tsx
-│   │   │   │   ├── index.tsx
-│   │   │   │   ├── courses.tsx
-│   │   │   │   ├── assignments.tsx
-│   │   │   │   └── profile.tsx
-│   │   │   └── course/
-│   │   │       └── [id].tsx (Dynamic course page)
-│   │   ├── components/ (Reusable Components)
-│   │   │   ├── AssignmentCard.tsx
-│   │   │   ├── CourseCard.tsx
-│   │   │   ├── ErrorBoundary.tsx
-│   │   │   ├── ErrorFallback.tsx
-│   │   │   ├── KeyboardAwareScrollViewCompat.tsx
-│   │   │   ├── ProgressBar.tsx
-│   │   │   ├── SearchBar.tsx
-│   │   │   ├── StatCard.tsx
-│   │   │   └── UserCard.tsx
-│   │   ├── assets/
-│   │   │   ├── fonts/
-│   │   │   └── images/
-│   │   ├── constants/
-│   │   │   └── colors.ts
-│   │   ├── context/ (State management)
-│   │   │   ├── AuthContext.tsx
-│   │   │   └── DataContext.tsx
-│   │   ├── hooks/
-│   │   │   └── useColors.ts
-│   │   ├── scripts/
-│   │   │   ├── build.js
-│   │   │   └── serve.js
-│   │   ├── server/
-│   │   │   ├── serve.js
-│   │   │   └── templates/
-│   │   │       └── landing-page.html
-│   │   ├── app.json (Expo config)
-│   │   ├── babel.config.js
-│   │   ├── metro.config.js
-│   │   ├── expo-env.d.ts
-│   │   ├── tsconfig.json
-│   │   ├── package.json
-│   │   ├── .expo/
-│   │   ├── .gitignore
-│   │   ├── .replit-artifact/
-│   │   └── node_modules/
-│   │
-│   └── mockup-sandbox/ (Vite + React Preview)
-│       ├── src/
-│       │   ├── main.tsx
-│       │   ├── App.tsx
-│       │   ├── index.css
-│       │   ├── .generated/
-│       │   ├── components/
-│       │   │   ├── mockups/
-│       │   │   └── ui/
-│       │   ├── hooks/
-│       │   │   ├── use-mobile.tsx
-│       │   │   └── use-toast.ts
-│       │   └── lib/
-│       │       └── utils.ts
-│       ├── components.json
-│       ├── vite.config.ts
-│       ├── index.html
-│       ├── mockupPreviewPlugin.ts
-│       ├── tsconfig.json
-│       ├── package.json
-│       ├── .replit-artifact/
-│       └── node_modules/
-│
-├── 📦 lib/ (Shared Libraries)
-│   ├── api-client-react/ (React API Client)
-│   │   ├── src/
-│   │   │   ├── index.ts
-│   │   │   ├── custom-fetch.ts
-│   │   │   └── generated/
-│   │   │       ├── api.ts
-│   │   │       └── api.schemas.ts
-│   │   ├── dist/
-│   │   ├── package.json
-│   │   ├── tsconfig.json
-│   │   ├── tsconfig.tsbuildinfo
-│   │   └── node_modules/
-│   │
-│   ├── api-spec/ (OpenAPI Specification)
-│   │   ├── openapi.yaml
-│   │   ├── orval.config.ts
-│   │   ├── package.json
-│   │   └── node_modules/
-│   │
-│   ├── api-zod/ (Zod Schemas for API)
-│   │   ├── src/
-│   │   │   ├── index.ts
-│   │   │   └── generated/
-│   │   │       ├── api.ts
-│   │   │       └── types/
-│   │   ├── dist/
-│   │   ├── package.json
-│   │   ├── tsconfig.json
-│   │   ├── tsconfig.tsbuildinfo
-│   │   └── node_modules/
-│   │
-│   └── db/ (Database/Drizzle ORM)
-│       ├── src/
-│       │   ├── index.ts
-│       │   └── schema/ (Database schemas)
-│       ├── drizzle.config.ts
-│       ├── dist/
-│       ├── package.json
-│       ├── tsconfig.json
-│       ├── tsconfig.tsbuildinfo
-│       └── node_modules/
-│
-└── 📦 scripts/ (Utility Scripts)
-    ├── src/
-    │   └── hello.ts
-    ├── post-merge.sh
-    ├── package.json
-    └── tsconfig.json
+```env
+DATABASE_URL=postgresql://user:password@localhost:5432/platform_learn
+```
+
+Jangan commit file `.env` yang berisi credential asli.
+
+## Command Utama
+
+Jalankan dari root repo `D:\platform_learn`.
+
+| Command | Fungsi |
+| --- | --- |
+| `pnpm run typecheck` | Typecheck seluruh workspace utama |
+| `pnpm run build` | Typecheck lalu build package yang punya script build |
+| `pnpm --filter @workspace/api-server run dev` | Build dan jalankan API server |
+| `pnpm --filter @workspace/mobile run dev` | Jalankan Expo dev server di port `8081` |
+| `pnpm --filter @workspace/mockup-sandbox run dev` | Jalankan Vite preview sandbox |
+| `pnpm --filter @workspace/api-spec run codegen` | Generate API client dan Zod schemas dari OpenAPI |
+| `pnpm --filter @workspace/db run push` | Push schema Drizzle ke PostgreSQL |
+| `pnpm --filter @workspace/db run push-force` | Push schema dengan auto-approve perubahan berisiko |
+
+## Menjalankan API Server
+
+API server berada di `artifacts/api-server`.
+
+```powershell
+pnpm --filter @workspace/api-server run dev
+```
+
+Script `dev` akan menjalankan build lalu start server. Server membutuhkan `PORT` dari root `.env`. Jika memakai contoh di atas, API tersedia di:
+
+```text
+http://localhost:5000/api/healthz
+```
+
+Endpoint aktif saat ini:
+
+| Method | Path | Deskripsi |
+| --- | --- | --- |
+| `GET` | `/api/healthz` | Health check, mengembalikan `{ "status": "ok" }` |
+
+Catatan: file route `course.ts` dan `assignments.ts` masih kosong, dan route user belum terpasang sebagai endpoint Express. Tambahkan route ke `artifacts/api-server/src/routes/index.ts` ketika API resource tersebut sudah siap.
+
+## Menjalankan Mobile App
+
+Mobile app berada di `artifacts/mobile`.
+
+```powershell
+pnpm --filter @workspace/mobile run dev
+```
+
+Expo akan berjalan di localhost port `8081`. Aplikasi memakai Expo Router dan memiliki area role-based:
+
+- `/(auth)` untuk login
+- `/(student)` untuk dashboard student
+- `/(instructor)` untuk dashboard instructor
+- `/(admin)` untuk dashboard admin
+- `/course/[id]` untuk detail course
+
+### Demo Accounts
+
+Login demo tersimpan di `artifacts/mobile/context/AuthContext.tsx`.
+
+| Role | Email | Password |
+| --- | --- | --- |
+| Admin | `admin@ols.edu` | `admin123` |
+| Instructor | `sarah@ols.edu` | `pass123` |
+| Instructor | `james@ols.edu` | `pass123` |
+| Student | `alex@ols.edu` | `pass123` |
+| Student | `maria@ols.edu` | `pass123` |
+| Student | `liam@ols.edu` | `pass123` |
+
+Data course, assignment, submission, progress, dan user demo berada di `artifacts/mobile/context/DataContext.tsx`. Perubahan data di mobile disimpan lokal menggunakan `AsyncStorage`.
+
+## Database
+
+Database package berada di `lib/db`.
+
+Source of truth schema:
+
+```text
+lib/db/src/schema/index.ts
+lib/db/src/schema/models/user.ts
+lib/db/src/schema/models/courses.ts
+lib/db/src/schema/models/assignments.ts
+lib/db/src/schema/models/enrollments.ts
+```
+
+Tabel yang didefinisikan saat ini:
+
+- `users`
+- `courses`
+- `lessons`
+- `assignments`
+- `submissions`
+- `enrollments`
+- `progress`
+
+Push schema ke database:
+
+```powershell
+pnpm --filter @workspace/db run push
+```
+
+Drizzle config berada di `lib/db/drizzle.config.ts`. Path schema memakai relative path:
+
+```ts
+schema: "./src/schema/index.ts"
+```
+
+Gunakan relative path ini agar Drizzle Kit dapat menemukan file schema dengan aman, terutama di Windows.
+
+## OpenAPI dan Codegen
+
+OpenAPI source of truth berada di:
+
+```text
+lib/api-spec/openapi.yaml
+```
+
+Generate ulang client dan schema setelah mengubah OpenAPI:
+
+```powershell
+pnpm --filter @workspace/api-spec run codegen
+```
+
+Output codegen:
+
+```text
+lib/api-client-react/src/generated/
+lib/api-zod/src/generated/
+```
+
+Jangan edit file generated secara manual. Ubah `openapi.yaml`, lalu jalankan `codegen`.
+
+## Alur Pengembangan yang Disarankan
+
+1. Update database schema di `lib/db/src/schema/models`.
+2. Jalankan `pnpm --filter @workspace/db run push` untuk sync ke PostgreSQL.
+3. Tambahkan atau update endpoint API di `artifacts/api-server/src/routes`.
+4. Update contract di `lib/api-spec/openapi.yaml`.
+5. Jalankan `pnpm --filter @workspace/api-spec run codegen`.
+6. Pakai generated client dari `@workspace/api-client-react` di frontend/mobile.
+7. Jalankan `pnpm run typecheck` sebelum commit.
+
+## Catatan Penting
+
+- API server start script membaca root `.env` dari folder `artifacts/api-server` menggunakan path `../../.env`.
+- Drizzle command membutuhkan `DATABASE_URL` tersedia saat command dijalankan dari package `lib/db`.
+- Mobile app saat ini belum sepenuhnya memakai API backend; sebagian besar data masih lokal.
+- OpenAPI title `Api` jangan diganti karena Orval config bergantung pada nama output tersebut.
+- `pnpm-workspace.yaml` memakai `minimumReleaseAge: 1440` sebagai proteksi supply-chain untuk dependency baru.
+
+## Troubleshooting
+
+### Drizzle: `No schema files found`
+
+Pastikan `lib/db/drizzle.config.ts` memakai:
+
+```ts
+schema: "./src/schema/index.ts"
+```
+
+Hindari absolute Windows path seperti `D:\...\src\schema\index.ts` di config Drizzle karena path tersebut dapat gagal dicocokkan oleh glob Drizzle Kit.
+
+### API: `PORT environment variable is required`
+
+Tambahkan `PORT` di root `.env`:
+
+```env
+PORT=5000
+```
+
+### API atau DB: koneksi PostgreSQL gagal
+
+Periksa:
+
+- PostgreSQL sedang berjalan.
+- Database `platform_learn` sudah dibuat.
+- `DATABASE_URL` benar.
+- User database punya akses ke database tersebut.
