@@ -5,5 +5,9 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export * from './course';
-export * from './courseInput';
+export interface Course {
+  id: string;
+  title: string;
+  description: string;
+  price?: number;
+}
