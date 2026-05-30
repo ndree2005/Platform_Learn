@@ -32,6 +32,7 @@ function findWorkspaceRoot(startDir) {
 
 const workspaceRoot = findWorkspaceRoot(projectRoot);
 const basePath = (process.env.BASE_PATH || "/").replace(/\/+$/, "");
+const LOCAL_DEPLOYMENT_DOMAIN = "localhost:3000";
 
 function exitWithError(message) {
   console.error(message);
@@ -78,10 +79,12 @@ function getDeploymentDomain() {
     return stripProtocol(process.env.EXPO_PUBLIC_DOMAIN);
   }
 
-  console.error(
-    "ERROR: No deployment domain found. Set REPLIT_INTERNAL_APP_DOMAIN, REPLIT_DEV_DOMAIN, or EXPO_PUBLIC_DOMAIN",
+  console.warn(
+    "No deployment domain found. Falling back to EXPO_PUBLIC_DOMAIN=" +
+      LOCAL_DEPLOYMENT_DOMAIN +
+      " for local builds.",
   );
-  process.exit(1);
+  return LOCAL_DEPLOYMENT_DOMAIN;
 }
 
 function prepareDirectories(timestamp) {

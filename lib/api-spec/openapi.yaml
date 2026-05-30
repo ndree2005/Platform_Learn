@@ -4,11 +4,26 @@ info:
   title: Api
   version: 0.1.0
 tags:
+  - name: health
+    description: Health checks
   - name: courses
     description: Course operations
   - name: assignments
     description: Assignment operations
 paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: API is healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
   /courses:
     get:
       operationId: getCourses
@@ -90,11 +105,47 @@ paths:
           schema:
             type: string
       responses:
-        "200":
+        "204":
           description: Course deleted
+
+  /courses/{id}/enrollments:
+    post:
+      operationId: enrollCourse
+      tags: [courses]
+      summary: Enroll a student in a course
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EnrollCourseInput"
+      responses:
+        "200":
+          description: Student enrolled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Course"
+        "404":
+          description: Course not found
 
 components:
   schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+            - ok
+      required:
+        - status
     Course:
       type: object
       properties:
@@ -104,12 +155,51 @@ components:
           type: string
         description:
           type: string
-        price:
+        instructorId:
+          type: string
+        instructorName:
+          type: string
+        category:
+          type: string
+        level:
+          type: string
+          enum:
+            - Beginner
+            - Intermediate
+            - Advanced
+        duration:
+          type: string
+        lessons:
+          type: array
+          items:
+            $ref: "#/components/schemas/Lesson"
+        enrolledStudents:
+          type: array
+          items:
+            type: string
+        rating:
           type: number
+        isPublished:
+          type: boolean
+        createdAt:
+          type: string
+        color:
+          type: string
       required:
         - id
         - title
         - description
+        - instructorId
+        - instructorName
+        - category
+        - level
+        - duration
+        - lessons
+        - enrolledStudents
+        - rating
+        - isPublished
+        - createdAt
+        - color
     CourseInput:
       type: object
       properties:
@@ -117,8 +207,61 @@ components:
           type: string
         description:
           type: string
-        price:
-          type: number
+        instructorId:
+          type: string
+        instructorName:
+          type: string
+        category:
+          type: string
+        level:
+          type: string
+          enum:
+            - Beginner
+            - Intermediate
+            - Advanced
+        duration:
+          type: string
+        lessons:
+          type: array
+          items:
+            $ref: "#/components/schemas/Lesson"
+        isPublished:
+          type: boolean
+        color:
+          type: string
       required:
         - title
         - description
+    EnrollCourseInput:
+      type: object
+      properties:
+        userId:
+          type: string
+      required:
+        - userId
+    Lesson:
+      type: object
+      properties:
+        id:
+          type: string
+        courseId:
+          type: string
+        title:
+          type: string
+        duration:
+          type: string
+        type:
+          type: string
+          enum:
+            - video
+            - reading
+            - quiz
+        order:
+          type: integer
+      required:
+        - id
+        - courseId
+        - title
+        - duration
+        - type
+        - order

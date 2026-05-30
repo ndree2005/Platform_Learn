@@ -4,10 +4,22 @@
  * Api
  * OpenAPI spec version: 0.1.0
  */
+import type { CourseLevel } from './courseLevel';
+import type { Lesson } from './lesson';
 
 export interface Course {
   id: string;
   title: string;
   description: string;
-  price?: number;
+  instructorId: string;
+  instructorName: string;
+  category: string;
+  level: CourseLevel;
+  duration: string;
+  lessons: Lesson[];
+  enrolledStudents: string[];
+  rating: number;
+  isPublished: boolean;
+  createdAt: string;
+  color: string;
 }

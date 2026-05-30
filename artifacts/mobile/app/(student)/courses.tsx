@@ -1,8 +1,22 @@
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  getGetCoursesQueryKey,
+  useEnrollCourse,
+  useGetCourses,
+} from "@workspace/api-client-react";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
 import React, { useState } from "react";
-import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "@/context/AuthContext";
 import { useData } from "@/context/DataContext";
@@ -13,13 +27,26 @@ import SearchBar from "@/components/SearchBar";
 export default function StudentCourses() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
+  const queryClient = useQueryClient();
   const { user } = useAuth();
-  const { courses, enrollInCourse, getUserProgress } = useData();
+  const { getUserProgress } = useData();
+  const {
+    data: courses = [],
+    isError,
+    isLoading,
+    refetch,
+  } = useGetCourses();
+  const enrollCourse = useEnrollCourse();
   const [search, setSearch] = useState("");
   const [tab, setTab] = useState<"enrolled" | "explore">("enrolled");
+  const userId = user?.id;
 
-  const enrolled = courses.filter((c) => c.enrolledStudents.includes(user!.id));
-  const available = courses.filter((c) => !c.enrolledStudents.includes(user!.id) && c.isPublished);
+  const enrolled = userId
+    ? courses.filter((c) => c.enrolledStudents.includes(userId))
+    : [];
+  const available = userId
+    ? courses.filter((c) => !c.enrolledStudents.includes(userId) && c.isPublished)
+    : [];
 
   const filter = (list: typeof courses) =>
     list.filter((c) =>
@@ -31,13 +58,28 @@ export default function StudentCourses() {
   const display = tab === "enrolled" ? filter(enrolled) : filter(available);
 
   const handleEnroll = (courseId: string, courseTitle: string) => {
+    if (!userId) {
+      Alert.alert("Login Required", "Please login before enrolling in a course.");
+      return;
+    }
+
     Alert.alert("Enroll in Course", `Join "${courseTitle}"?`, [
       { text: "Cancel", style: "cancel" },
       {
         text: "Enroll",
         onPress: () => {
-          enrollInCourse(user!.id, courseId);
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          enrollCourse.mutate(
+            { id: courseId, data: { userId } },
+            {
+              onSuccess: () => {
+                queryClient.invalidateQueries({ queryKey: getGetCoursesQueryKey() });
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              },
+              onError: () => {
+                Alert.alert("Enrollment Failed", "Please check that the API server is running.");
+              },
+            },
+          );
         },
       },
     ]);
@@ -68,7 +110,27 @@ export default function StudentCourses() {
       </View>
 
       <View style={styles.list}>
-        {display.length === 0 ? (
+        {isLoading ? (
+          <View style={[styles.empty, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <ActivityIndicator color={colors.primary} />
+            <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>
+              Loading courses from API...
+            </Text>
+          </View>
+        ) : isError ? (
+          <View style={[styles.empty, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <Ionicons name="cloud-offline-outline" size={40} color={colors.mutedForeground} />
+            <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>
+              Could not connect to the API server.
+            </Text>
+            <TouchableOpacity
+              style={[styles.retryBtn, { borderColor: colors.border }]}
+              onPress={() => refetch()}
+            >
+              <Text style={[styles.retryBtnText, { color: colors.primary }]}>Retry</Text>
+            </TouchableOpacity>
+          </View>
+        ) : display.length === 0 ? (
           <View style={[styles.empty, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <Ionicons name="search-outline" size={40} color={colors.mutedForeground} />
             <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>
@@ -77,8 +139,8 @@ export default function StudentCourses() {
           </View>
         ) : (
           display.map((course) => {
-            const p = getUserProgress(user!.id, course.id);
-            const isEnrolled = course.enrolledStudents.includes(user!.id);
+            const p = userId ? getUserProgress(userId, course.id) : undefined;
+            const isEnrolled = userId ? course.enrolledStudents.includes(userId) : false;
             return (
               <View key={course.id}>
                 <CourseCard
@@ -95,10 +157,13 @@ export default function StudentCourses() {
                 {!isEnrolled && (
                   <TouchableOpacity
                     style={[styles.enrollBtn, { backgroundColor: colors.primary }]}
+                    disabled={enrollCourse.isPending}
                     onPress={() => handleEnroll(course.id, course.title)}
                   >
                     <Ionicons name="add-circle-outline" size={18} color="#fff" />
-                    <Text style={styles.enrollBtnText}>Enroll Now</Text>
+                    <Text style={styles.enrollBtnText}>
+                      {enrollCourse.isPending ? "Enrolling..." : "Enroll Now"}
+                    </Text>
                   </TouchableOpacity>
                 )}
               </View>
@@ -136,6 +201,13 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   emptyText: { fontSize: 14, textAlign: "center" },
+  retryBtn: {
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  retryBtnText: { fontSize: 14, fontWeight: "600" },
   enrollBtn: {
     flexDirection: "row",
     alignItems: "center",

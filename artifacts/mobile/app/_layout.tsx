@@ -20,7 +20,7 @@ const queryClient = new QueryClient();
 export default function RootLayout() {
   useEffect(() => {
     // Atur base URL ke API server
-    setBaseUrl("http://localhost:3000/api"); // atau IP server Anda
+    setBaseUrl("http://localhost:5000"); // Untuk HP fisik, ganti localhost dengan IP laptop.
 
     // Setup auth token
     setAuthTokenGetter(async () => {

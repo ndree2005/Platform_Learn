@@ -20,7 +20,9 @@ import type {
 
 import type {
   Course,
-  CourseInput
+  CourseInput,
+  EnrollCourseInput,
+  HealthStatus
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -32,6 +34,83 @@ type AwaitedInput<T> = PromiseLike<T> | T;
 
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
+
+
+
+export const getHealthCheckUrl = () => {
+
+
+
+
+  return `/api/healthz`
+}
+
+/**
+ * @summary Health check
+ */
+export const healthCheck = async ( options?: RequestInit): Promise<HealthStatus> => {
+
+  return customFetch<HealthStatus>(getHealthCheckUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getHealthCheckQueryKey = () => {
+    return [
+    `/api/healthz`
+    ] as const;
+    }
+
+
+export const getHealthCheckQueryOptions = <TData = Awaited<ReturnType<typeof healthCheck>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof healthCheck>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getHealthCheckQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof healthCheck>>> = ({ signal }) => healthCheck({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof healthCheck>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type HealthCheckQueryResult = NonNullable<Awaited<ReturnType<typeof healthCheck>>>
+export type HealthCheckQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Health check
+ */
+
+export function useHealthCheck<TData = Awaited<ReturnType<typeof healthCheck>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof healthCheck>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getHealthCheckQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
 
 
 
@@ -382,5 +461,77 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getDeleteCourseMutationOptions(options));
+    }
+
+export const getEnrollCourseUrl = (id: string,) => {
+
+
+
+
+  return `/api/courses/${id}/enrollments`
+}
+
+/**
+ * @summary Enroll a student in a course
+ */
+export const enrollCourse = async (id: string,
+    enrollCourseInput: EnrollCourseInput, options?: RequestInit): Promise<Course> => {
+
+  return customFetch<Course>(getEnrollCourseUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      enrollCourseInput,)
+  }
+);}
+
+
+
+
+export const getEnrollCourseMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof enrollCourse>>, TError,{id: string;data: BodyType<EnrollCourseInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof enrollCourse>>, TError,{id: string;data: BodyType<EnrollCourseInput>}, TContext> => {
+
+const mutationKey = ['enrollCourse'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof enrollCourse>>, {id: string;data: BodyType<EnrollCourseInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  enrollCourse(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type EnrollCourseMutationResult = NonNullable<Awaited<ReturnType<typeof enrollCourse>>>
+    export type EnrollCourseMutationBody = BodyType<EnrollCourseInput>
+    export type EnrollCourseMutationError = ErrorType<void>
+
+    /**
+ * @summary Enroll a student in a course
+ */
+export const useEnrollCourse = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof enrollCourse>>, TError,{id: string;data: BodyType<EnrollCourseInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof enrollCourse>>,
+        TError,
+        {id: string;data: BodyType<EnrollCourseInput>},
+        TContext
+      > => {
+      return useMutation(getEnrollCourseMutationOptions(options));
     }
 

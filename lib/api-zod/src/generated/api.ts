@@ -8,13 +8,38 @@ import * as zod from 'zod';
 
 
 /**
+ * @summary Health check
+ */
+export const HealthCheckResponse = zod.object({
+  "status": zod.enum(['ok'])
+})
+
+
+/**
  * @summary Get all courses
  */
 export const GetCoursesResponseItem = zod.object({
   "id": zod.string(),
   "title": zod.string(),
   "description": zod.string(),
-  "price": zod.number().optional()
+  "instructorId": zod.string(),
+  "instructorName": zod.string(),
+  "category": zod.string(),
+  "level": zod.enum(['Beginner', 'Intermediate', 'Advanced']),
+  "duration": zod.string(),
+  "lessons": zod.array(zod.object({
+  "id": zod.string(),
+  "courseId": zod.string(),
+  "title": zod.string(),
+  "duration": zod.string(),
+  "type": zod.enum(['video', 'reading', 'quiz']),
+  "order": zod.number()
+})),
+  "enrolledStudents": zod.array(zod.string()),
+  "rating": zod.number(),
+  "isPublished": zod.boolean(),
+  "createdAt": zod.string(),
+  "color": zod.string()
 })
 export const GetCoursesResponse = zod.array(GetCoursesResponseItem)
 
@@ -25,7 +50,21 @@ export const GetCoursesResponse = zod.array(GetCoursesResponseItem)
 export const CreateCourseBody = zod.object({
   "title": zod.string(),
   "description": zod.string(),
-  "price": zod.number().optional()
+  "instructorId": zod.string().optional(),
+  "instructorName": zod.string().optional(),
+  "category": zod.string().optional(),
+  "level": zod.enum(['Beginner', 'Intermediate', 'Advanced']).optional(),
+  "duration": zod.string().optional(),
+  "lessons": zod.array(zod.object({
+  "id": zod.string(),
+  "courseId": zod.string(),
+  "title": zod.string(),
+  "duration": zod.string(),
+  "type": zod.enum(['video', 'reading', 'quiz']),
+  "order": zod.number()
+})).optional(),
+  "isPublished": zod.boolean().optional(),
+  "color": zod.string().optional()
 })
 
 
@@ -37,7 +76,24 @@ export const GetCourseResponse = zod.object({
   "id": zod.string(),
   "title": zod.string(),
   "description": zod.string(),
-  "price": zod.number().optional()
+  "instructorId": zod.string(),
+  "instructorName": zod.string(),
+  "category": zod.string(),
+  "level": zod.enum(['Beginner', 'Intermediate', 'Advanced']),
+  "duration": zod.string(),
+  "lessons": zod.array(zod.object({
+  "id": zod.string(),
+  "courseId": zod.string(),
+  "title": zod.string(),
+  "duration": zod.string(),
+  "type": zod.enum(['video', 'reading', 'quiz']),
+  "order": zod.number()
+})),
+  "enrolledStudents": zod.array(zod.string()),
+  "rating": zod.number(),
+  "isPublished": zod.boolean(),
+  "createdAt": zod.string(),
+  "color": zod.string()
 })
 
 
@@ -48,19 +104,86 @@ export const UpdateCourseParams = zod.object({
 export const UpdateCourseBody = zod.object({
   "title": zod.string(),
   "description": zod.string(),
-  "price": zod.number().optional()
+  "instructorId": zod.string().optional(),
+  "instructorName": zod.string().optional(),
+  "category": zod.string().optional(),
+  "level": zod.enum(['Beginner', 'Intermediate', 'Advanced']).optional(),
+  "duration": zod.string().optional(),
+  "lessons": zod.array(zod.object({
+  "id": zod.string(),
+  "courseId": zod.string(),
+  "title": zod.string(),
+  "duration": zod.string(),
+  "type": zod.enum(['video', 'reading', 'quiz']),
+  "order": zod.number()
+})).optional(),
+  "isPublished": zod.boolean().optional(),
+  "color": zod.string().optional()
 })
 
 export const UpdateCourseResponse = zod.object({
   "id": zod.string(),
   "title": zod.string(),
   "description": zod.string(),
-  "price": zod.number().optional()
+  "instructorId": zod.string(),
+  "instructorName": zod.string(),
+  "category": zod.string(),
+  "level": zod.enum(['Beginner', 'Intermediate', 'Advanced']),
+  "duration": zod.string(),
+  "lessons": zod.array(zod.object({
+  "id": zod.string(),
+  "courseId": zod.string(),
+  "title": zod.string(),
+  "duration": zod.string(),
+  "type": zod.enum(['video', 'reading', 'quiz']),
+  "order": zod.number()
+})),
+  "enrolledStudents": zod.array(zod.string()),
+  "rating": zod.number(),
+  "isPublished": zod.boolean(),
+  "createdAt": zod.string(),
+  "color": zod.string()
 })
 
 
 export const DeleteCourseParams = zod.object({
   "id": zod.coerce.string()
+})
+
+
+/**
+ * @summary Enroll a student in a course
+ */
+export const EnrollCourseParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const EnrollCourseBody = zod.object({
+  "userId": zod.string()
+})
+
+export const EnrollCourseResponse = zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "description": zod.string(),
+  "instructorId": zod.string(),
+  "instructorName": zod.string(),
+  "category": zod.string(),
+  "level": zod.enum(['Beginner', 'Intermediate', 'Advanced']),
+  "duration": zod.string(),
+  "lessons": zod.array(zod.object({
+  "id": zod.string(),
+  "courseId": zod.string(),
+  "title": zod.string(),
+  "duration": zod.string(),
+  "type": zod.enum(['video', 'reading', 'quiz']),
+  "order": zod.number()
+})),
+  "enrolledStudents": zod.array(zod.string()),
+  "rating": zod.number(),
+  "isPublished": zod.boolean(),
+  "createdAt": zod.string(),
+  "color": zod.string()
 })
 
 

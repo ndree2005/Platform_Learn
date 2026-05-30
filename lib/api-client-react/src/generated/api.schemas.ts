@@ -4,16 +4,84 @@
  * Api
  * OpenAPI spec version: 0.1.0
  */
+export type HealthStatusStatus = typeof HealthStatusStatus[keyof typeof HealthStatusStatus];
+
+
+export const HealthStatusStatus = {
+  ok: 'ok',
+} as const;
+
+export interface HealthStatus {
+  status: HealthStatusStatus;
+}
+
+export type CourseLevel = typeof CourseLevel[keyof typeof CourseLevel];
+
+
+export const CourseLevel = {
+  Beginner: 'Beginner',
+  Intermediate: 'Intermediate',
+  Advanced: 'Advanced',
+} as const;
+
+export type LessonType = typeof LessonType[keyof typeof LessonType];
+
+
+export const LessonType = {
+  video: 'video',
+  reading: 'reading',
+  quiz: 'quiz',
+} as const;
+
+export interface Lesson {
+  id: string;
+  courseId: string;
+  title: string;
+  duration: string;
+  type: LessonType;
+  order: number;
+}
+
 export interface Course {
   id: string;
   title: string;
   description: string;
-  price?: number;
+  instructorId: string;
+  instructorName: string;
+  category: string;
+  level: CourseLevel;
+  duration: string;
+  lessons: Lesson[];
+  enrolledStudents: string[];
+  rating: number;
+  isPublished: boolean;
+  createdAt: string;
+  color: string;
 }
+
+export type CourseInputLevel = typeof CourseInputLevel[keyof typeof CourseInputLevel];
+
+
+export const CourseInputLevel = {
+  Beginner: 'Beginner',
+  Intermediate: 'Intermediate',
+  Advanced: 'Advanced',
+} as const;
 
 export interface CourseInput {
   title: string;
   description: string;
-  price?: number;
+  instructorId?: string;
+  instructorName?: string;
+  category?: string;
+  level?: CourseInputLevel;
+  duration?: string;
+  lessons?: Lesson[];
+  isPublished?: boolean;
+  color?: string;
+}
+
+export interface EnrollCourseInput {
+  userId: string;
 }
 
