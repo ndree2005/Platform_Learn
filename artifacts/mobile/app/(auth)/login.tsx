@@ -21,7 +21,7 @@ import { useColors } from "@/hooks/useColors";
 
 const DEMO_ACCOUNTS = [
   { label: "Student", email: "alex@ols.edu", password: "pass123", icon: "person" as const, color: "#0CA678" },
-  { label: "Instructor", email: "sarah@ols.edu", password: "pass123", icon: "school" as const, color: "#3B5BDB" },
+  { label: "Guru", email: "sarah@ols.edu", password: "pass123", icon: "school" as const, color: "#3B5BDB" },
   { label: "Admin", email: "admin@ols.edu", password: "admin123", icon: "shield-checkmark" as const, color: "#9B59B6" },
 ];
 
@@ -123,9 +123,19 @@ export default function LoginScreen() {
               {isLoading ? (
                 <ActivityIndicator color="#fff" />
               ) : (
-                <Text style={styles.loginBtnText}>Sign In</Text>
+                <View style={styles.buttonContent}>
+                  <Ionicons name="log-in-outline" size={18} color="#fff" />
+                  <Text style={styles.loginBtnText}>Sign In</Text>
+                </View>
               )}
             </TouchableOpacity>
+
+            <View style={styles.authSwitch}>
+              <Text style={[styles.authSwitchText, { color: colors.mutedForeground }]}>Belum punya akun?</Text>
+              <TouchableOpacity onPress={() => router.push("./register")} activeOpacity={0.75}>
+                <Text style={[styles.authSwitchLink, { color: colors.primary }]}>Daftar sebagai Student/Guru</Text>
+              </TouchableOpacity>
+            </View>
           </View>
 
           <View style={styles.demoSection}>
@@ -179,7 +189,7 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 28,
     fontWeight: "800",
-    letterSpacing: -0.5,
+    letterSpacing: 0,
   },
   tagline: {
     color: "rgba(255,255,255,0.75)",
@@ -222,7 +232,25 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
     fontWeight: "700",
-    letterSpacing: 0.3,
+    letterSpacing: 0,
+  },
+  buttonContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  authSwitch: {
+    alignItems: "center",
+    gap: 6,
+    marginTop: 2,
+  },
+  authSwitchText: {
+    fontSize: 13,
+  },
+  authSwitchLink: {
+    fontSize: 14,
+    fontWeight: "700",
   },
   demoSection: { gap: 14 },
   dividerRow: {

@@ -64,6 +64,8 @@ export interface AppUser {
   isActive: boolean;
 }
 
+type CreateAppUserInput = Omit<AppUser, "id" | "joinDate"> & Partial<Pick<AppUser, "id" | "joinDate">>;
+
 interface DataContextType {
   courses: Course[];
   assignments: Assignment[];
@@ -79,7 +81,7 @@ interface DataContextType {
   submitAssignment: (assignmentId: string, studentId: string, studentName: string, answer: string) => void;
   gradeSubmission: (submissionId: string, score: number) => void;
   updateProgress: (userId: string, courseId: string, lessonId: string) => void;
-  addUser: (user: Omit<AppUser, "id" | "joinDate">) => void;
+  addUser: (user: CreateAppUserInput) => AppUser;
   updateUser: (id: string, updates: Partial<AppUser>) => void;
   deleteUser: (id: string) => void;
   getUserProgress: (userId: string, courseId: string) => Progress | undefined;
@@ -307,9 +309,21 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
-  const addUser = (user: Omit<AppUser, "id" | "joinDate">) => {
-    const newU: AppUser = { ...user, id: genId(), joinDate: new Date().toISOString().split("T")[0] };
-    setUsers((prev) => { const next = [...prev, newU]; save("@ols_users", next); return next; });
+  const addUser = (user: CreateAppUserInput) => {
+    const newU: AppUser = {
+      ...user,
+      id: user.id ?? genId(),
+      joinDate: user.joinDate ?? new Date().toISOString().split("T")[0],
+    };
+    setUsers((prev) => {
+      const exists = prev.some((item) => item.id === newU.id || item.email.toLowerCase() === newU.email.toLowerCase());
+      if (exists) return prev;
+
+      const next = [...prev, newU];
+      save("@ols_users", next);
+      return next;
+    });
+    return newU;
   };
 
   const updateUser = (id: string, updates: Partial<AppUser>) => {
