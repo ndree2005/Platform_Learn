@@ -6,10 +6,10 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type LessonType = typeof LessonType[keyof typeof LessonType];
+export type CreateLessonType = typeof CreateLessonType[keyof typeof CreateLessonType];
 
 
-export const LessonType = {
+export const CreateLessonType = {
   video: 'video',
   reading: 'reading',
   quiz: 'quiz',

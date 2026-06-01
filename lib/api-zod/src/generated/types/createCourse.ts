@@ -5,9 +5,8 @@
  * LearnHub Online Learning System API
  * OpenAPI spec version: 0.1.0
  */
-import type { Lesson } from './lesson';
 
-export interface Course {
+export interface CreateCourse {
   id: string;
   title: string;
   description: string;
@@ -17,9 +16,7 @@ export interface Course {
   level: string;
   duration: string;
   color: string;
-  rating: number;
-  isPublished: boolean;
+  rating?: number;
+  isPublished?: boolean;
   createdAt: string;
-  lessons: Lesson[];
-  enrolledStudents: string[];
 }

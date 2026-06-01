@@ -6,6 +6,10 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface HealthStatus {
-  status: string;
+export interface SubmitRequest {
+  id: string;
+  studentId: string;
+  studentName: string;
+  answer: string;
+  submittedAt: string;
 }

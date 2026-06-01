@@ -5,13 +5,12 @@
  * LearnHub Online Learning System API
  * OpenAPI spec version: 0.1.0
  */
-import type { LessonType } from './lessonType';
+import type { CreateLessonType } from './createLessonType';
 
-export interface Lesson {
+export interface CreateLesson {
   id: string;
-  courseId: string;
   title: string;
   duration: string;
-  type: LessonType;
+  type: CreateLessonType;
   order: number;
 }

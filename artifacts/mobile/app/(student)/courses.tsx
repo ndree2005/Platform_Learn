@@ -1,15 +1,8 @@
-import { useQueryClient } from "@tanstack/react-query";
-import {
-  getGetCoursesQueryKey,
-  useEnrollCourse,
-  useGetCourses,
-} from "@workspace/api-client-react";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   ScrollView,
   StyleSheet,
@@ -27,59 +20,34 @@ import SearchBar from "@/components/SearchBar";
 export default function StudentCourses() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const queryClient = useQueryClient();
   const { user } = useAuth();
-  const { getUserProgress } = useData();
-  const {
-    data: courses = [],
-    isError,
-    isLoading,
-    refetch,
-  } = useGetCourses();
-  const enrollCourse = useEnrollCourse();
+  const { courses, enrollInCourse, getUserProgress } = useData();
   const [search, setSearch] = useState("");
   const [tab, setTab] = useState<"enrolled" | "explore">("enrolled");
-  const userId = user?.id;
 
-  const enrolled = userId
-    ? courses.filter((c) => c.enrolledStudents.includes(userId))
-    : [];
-  const available = userId
-    ? courses.filter((c) => !c.enrolledStudents.includes(userId) && c.isPublished)
-    : [];
+  const enrolled = courses.filter((c) => c.enrolledStudents.includes(user!.id));
+  const available = courses.filter(
+    (c) => !c.enrolledStudents.includes(user!.id) && c.isPublished,
+  );
 
   const filter = (list: typeof courses) =>
-    list.filter((c) =>
-      c.title.toLowerCase().includes(search.toLowerCase()) ||
-      c.category.toLowerCase().includes(search.toLowerCase()) ||
-      c.instructorName.toLowerCase().includes(search.toLowerCase())
+    list.filter(
+      (c) =>
+        c.title.toLowerCase().includes(search.toLowerCase()) ||
+        c.category.toLowerCase().includes(search.toLowerCase()) ||
+        c.instructorName.toLowerCase().includes(search.toLowerCase()),
     );
 
   const display = tab === "enrolled" ? filter(enrolled) : filter(available);
 
   const handleEnroll = (courseId: string, courseTitle: string) => {
-    if (!userId) {
-      Alert.alert("Login Required", "Please login before enrolling in a course.");
-      return;
-    }
-
     Alert.alert("Enroll in Course", `Join "${courseTitle}"?`, [
       { text: "Cancel", style: "cancel" },
       {
         text: "Enroll",
         onPress: () => {
-          enrollCourse.mutate(
-            { id: courseId, data: { userId } },
-            {
-              onSuccess: () => {
-                queryClient.invalidateQueries({ queryKey: getGetCoursesQueryKey() });
-                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-              },
-              onError: () => {
-                Alert.alert("Enrollment Failed", "Please check that the API server is running.");
-              },
-            },
-          );
+          enrollInCourse(user!.id, courseId);
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         },
       },
     ]);
@@ -88,59 +56,69 @@ export default function StudentCourses() {
   return (
     <ScrollView
       style={[styles.root, { backgroundColor: colors.background }]}
-      contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 90 }]}
+      contentContainerStyle={[
+        styles.content,
+        { paddingBottom: insets.bottom + 90 },
+      ]}
       showsVerticalScrollIndicator={false}
     >
       <View style={styles.searchRow}>
-        <SearchBar value={search} onChangeText={setSearch} placeholder="Search courses..." />
+        <SearchBar
+          value={search}
+          onChangeText={setSearch}
+          placeholder="Search courses..."
+        />
       </View>
 
       <View style={[styles.tabRow, { backgroundColor: colors.muted }]}>
         {(["enrolled", "explore"] as const).map((t) => (
           <TouchableOpacity
             key={t}
-            style={[styles.tabBtn, tab === t && { backgroundColor: colors.card }]}
+            style={[
+              styles.tabBtn,
+              tab === t && { backgroundColor: colors.card },
+            ]}
             onPress={() => setTab(t)}
           >
-            <Text style={[styles.tabText, { color: tab === t ? colors.primary : colors.mutedForeground }]}>
-              {t === "enrolled" ? `My Courses (${enrolled.length})` : `Explore (${available.length})`}
+            <Text
+              style={[
+                styles.tabText,
+                { color: tab === t ? colors.primary : colors.mutedForeground },
+              ]}
+            >
+              {t === "enrolled"
+                ? `My Courses (${enrolled.length})`
+                : `Explore (${available.length})`}
             </Text>
           </TouchableOpacity>
         ))}
       </View>
 
       <View style={styles.list}>
-        {isLoading ? (
-          <View style={[styles.empty, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <ActivityIndicator color={colors.primary} />
+        {display.length === 0 ? (
+          <View
+            style={[
+              styles.empty,
+              { backgroundColor: colors.card, borderColor: colors.border },
+            ]}
+          >
+            <Ionicons
+              name="search-outline"
+              size={40}
+              color={colors.mutedForeground}
+            />
             <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>
-              Loading courses from API...
-            </Text>
-          </View>
-        ) : isError ? (
-          <View style={[styles.empty, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <Ionicons name="cloud-offline-outline" size={40} color={colors.mutedForeground} />
-            <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>
-              Could not connect to the API server.
-            </Text>
-            <TouchableOpacity
-              style={[styles.retryBtn, { borderColor: colors.border }]}
-              onPress={() => refetch()}
-            >
-              <Text style={[styles.retryBtnText, { color: colors.primary }]}>Retry</Text>
-            </TouchableOpacity>
-          </View>
-        ) : display.length === 0 ? (
-          <View style={[styles.empty, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <Ionicons name="search-outline" size={40} color={colors.mutedForeground} />
-            <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>
-              {search ? "No courses match your search" : tab === "enrolled" ? "Not enrolled in any courses yet" : "No available courses"}
+              {search
+                ? "No courses match your search"
+                : tab === "enrolled"
+                  ? "Not enrolled in any courses yet"
+                  : "No available courses"}
             </Text>
           </View>
         ) : (
           display.map((course) => {
-            const p = userId ? getUserProgress(userId, course.id) : undefined;
-            const isEnrolled = userId ? course.enrolledStudents.includes(userId) : false;
+            const p = getUserProgress(user!.id, course.id);
+            const isEnrolled = course.enrolledStudents.includes(user!.id);
             return (
               <View key={course.id}>
                 <CourseCard
@@ -156,14 +134,18 @@ export default function StudentCourses() {
                 />
                 {!isEnrolled && (
                   <TouchableOpacity
-                    style={[styles.enrollBtn, { backgroundColor: colors.primary }]}
-                    disabled={enrollCourse.isPending}
+                    style={[
+                      styles.enrollBtn,
+                      { backgroundColor: colors.primary },
+                    ]}
                     onPress={() => handleEnroll(course.id, course.title)}
                   >
-                    <Ionicons name="add-circle-outline" size={18} color="#fff" />
-                    <Text style={styles.enrollBtnText}>
-                      {enrollCourse.isPending ? "Enrolling..." : "Enroll Now"}
-                    </Text>
+                    <Ionicons
+                      name="add-circle-outline"
+                      size={18}
+                      color="#fff"
+                    />
+                    <Text style={styles.enrollBtnText}>Enroll Now</Text>
                   </TouchableOpacity>
                 )}
               </View>
@@ -201,13 +183,6 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   emptyText: { fontSize: 14, textAlign: "center" },
-  retryBtn: {
-    borderWidth: 1,
-    borderRadius: 10,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-  },
-  retryBtnText: { fontSize: 14, fontWeight: "600" },
   enrollBtn: {
     flexDirection: "row",
     alignItems: "center",

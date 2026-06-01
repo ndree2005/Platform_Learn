@@ -6,6 +6,10 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface HealthStatus {
-  status: string;
+export interface MarkProgressRequest {
+  id: string;
+  userId: string;
+  courseId: string;
+  lessonId: string;
+  completedAt: string;
 }

@@ -1,10 +1,16 @@
-import { Router } from "express";
+import { Router, type IRouter } from "express";
 import healthRouter from "./health";
-import courseRouter from "./course";
+import usersRouter from "./users";
+import coursesRouter from "./course";
+import assignmentsRouter from "./assignments";
+import progressRouter from "./progress";
 
-const router = Router();
+const router: IRouter = Router();
 
 router.use(healthRouter);
-router.use("/courses", courseRouter);
+router.use(usersRouter);
+router.use(coursesRouter);
+router.use(assignmentsRouter);
+router.use(progressRouter);
 
 export default router;

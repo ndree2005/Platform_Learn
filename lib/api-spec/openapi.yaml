@@ -1,15 +1,24 @@
-# lib/api-spec/openapi.yaml
 openapi: 3.1.0
 info:
+  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
+  description: LearnHub Online Learning System API
+servers:
+  - url: /api
+    description: Base API path
 tags:
   - name: health
-    description: Health checks
+    description: Health operations
+  - name: users
+    description: User management
   - name: courses
-    description: Course operations
+    description: Course management
   - name: assignments
-    description: Assignment operations
+    description: Assignment and submission management
+  - name: progress
+    description: Student progress tracking
+
 paths:
   /healthz:
     get:
@@ -18,17 +27,100 @@ paths:
       summary: Health check
       responses:
         "200":
-          description: API is healthy
+          description: Healthy
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
 
+  # ── Users ──────────────────────────────────────────────────────────────────
+  /users:
+    get:
+      operationId: getUsers
+      tags: [users]
+      summary: List all users
+      responses:
+        "200":
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AppUser"
+    post:
+      operationId: createUser
+      tags: [users]
+      summary: Create a user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateUser"
+      responses:
+        "201":
+          description: Created user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppUser"
+
+  /users/{id}:
+    get:
+      operationId: getUser
+      tags: [users]
+      summary: Get a user by ID
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: A user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppUser"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    put:
+      operationId: updateUser
+      tags: [users]
+      summary: Update a user
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateUser"
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppUser"
+    delete:
+      operationId: deleteUser
+      tags: [users]
+      summary: Delete a user
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "204":
+          description: Deleted
+
+  # ── Courses ─────────────────────────────────────────────────────────────────
   /courses:
     get:
       operationId: getCourses
       tags: [courses]
-      summary: Get all courses
+      summary: List all courses (with lessons and enrolled students)
       responses:
         "200":
           description: List of courses
@@ -41,16 +133,16 @@ paths:
     post:
       operationId: createCourse
       tags: [courses]
-      summary: Create new course
+      summary: Create a course
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CourseInput"
+              $ref: "#/components/schemas/CreateCourse"
       responses:
         "201":
-          description: Course created
+          description: Created course
           content:
             application/json:
               schema:
@@ -60,37 +152,37 @@ paths:
     get:
       operationId: getCourse
       tags: [courses]
+      summary: Get a course by ID
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
+        - { name: id, in: path, required: true, schema: { type: string } }
       responses:
         "200":
-          description: Course details
+          description: A course
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Course"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
     put:
       operationId: updateCourse
       tags: [courses]
+      summary: Update a course
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
+        - { name: id, in: path, required: true, schema: { type: string } }
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CourseInput"
+              $ref: "#/components/schemas/UpdateCourse"
       responses:
         "200":
-          description: Course updated
+          description: Updated course
           content:
             application/json:
               schema:
@@ -98,77 +190,322 @@ paths:
     delete:
       operationId: deleteCourse
       tags: [courses]
+      summary: Delete a course
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
+        - { name: id, in: path, required: true, schema: { type: string } }
       responses:
         "204":
-          description: Course deleted
+          description: Deleted
 
-  /courses/{id}/enrollments:
+  /courses/{id}/enroll:
     post:
-      operationId: enrollCourse
+      operationId: enrollInCourse
       tags: [courses]
       summary: Enroll a student in a course
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
+        - { name: id, in: path, required: true, schema: { type: string } }
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/EnrollCourseInput"
+              $ref: "#/components/schemas/EnrollRequest"
       responses:
         "200":
-          description: Student enrolled
+          description: Enrolled successfully
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Course"
-        "404":
-          description: Course not found
+
+  /courses/{id}/lessons:
+    post:
+      operationId: addLesson
+      tags: [courses]
+      summary: Add a lesson to a course
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateLesson"
+      responses:
+        "201":
+          description: Created lesson
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lesson"
+
+  /lessons/{id}:
+    delete:
+      operationId: deleteLesson
+      tags: [courses]
+      summary: Delete a lesson
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "204":
+          description: Deleted
+
+  # ── Assignments ──────────────────────────────────────────────────────────────
+  /assignments:
+    get:
+      operationId: getAssignments
+      tags: [assignments]
+      summary: List all assignments
+      responses:
+        "200":
+          description: List of assignments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Assignment"
+    post:
+      operationId: createAssignment
+      tags: [assignments]
+      summary: Create an assignment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAssignment"
+      responses:
+        "201":
+          description: Created assignment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Assignment"
+
+  /assignments/{id}:
+    get:
+      operationId: getAssignment
+      tags: [assignments]
+      summary: Get an assignment by ID
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: An assignment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Assignment"
+    delete:
+      operationId: deleteAssignment
+      tags: [assignments]
+      summary: Delete an assignment
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "204":
+          description: Deleted
+
+  /assignments/{id}/submit:
+    post:
+      operationId: submitAssignment
+      tags: [assignments]
+      summary: Submit an assignment
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubmitRequest"
+      responses:
+        "201":
+          description: Submission created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Submission"
+
+  /submissions:
+    get:
+      operationId: getSubmissions
+      tags: [assignments]
+      summary: List all submissions (optionally filtered by assignmentId or studentId)
+      parameters:
+        - {
+            name: assignmentId,
+            in: query,
+            required: false,
+            schema: { type: string },
+          }
+        - {
+            name: studentId,
+            in: query,
+            required: false,
+            schema: { type: string },
+          }
+      responses:
+        "200":
+          description: List of submissions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Submission"
+
+  /submissions/{id}/grade:
+    put:
+      operationId: gradeSubmission
+      tags: [assignments]
+      summary: Grade a submission
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GradeRequest"
+      responses:
+        "200":
+          description: Graded submission
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Submission"
+
+  # ── Progress ─────────────────────────────────────────────────────────────────
+  /progress/{userId}/{courseId}:
+    get:
+      operationId: getCourseProgress
+      tags: [progress]
+      summary: Get a student's progress in a course
+      parameters:
+        - { name: userId, in: path, required: true, schema: { type: string } }
+        - { name: courseId, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Progress data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProgressResult"
+
+  /progress:
+    post:
+      operationId: markLessonComplete
+      tags: [progress]
+      summary: Mark a lesson as complete
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MarkProgressRequest"
+      responses:
+        "201":
+          description: Lesson marked complete
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProgressResult"
 
 components:
   schemas:
     HealthStatus:
       type: object
       properties:
-        status:
-          type: string
-          enum:
-            - ok
-      required:
-        - status
-    Course:
+        status: { type: string }
+      required: [status]
+
+    ErrorResponse:
       type: object
       properties:
-        id:
-          type: string
-        title:
-          type: string
-        description:
-          type: string
-        instructorId:
-          type: string
-        instructorName:
-          type: string
-        category:
-          type: string
-        level:
-          type: string
-          enum:
-            - Beginner
-            - Intermediate
-            - Advanced
-        duration:
-          type: string
+        error: { type: string }
+      required: [error]
+
+    # ── User schemas ────────────────────────────────────────────────────────
+    AppUser:
+      type: object
+      required: [id, name, email, role, joinDate, isActive]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        email: { type: string }
+        role: { type: string, enum: [student, instructor, admin] }
+        joinDate: { type: string }
+        isActive: { type: boolean }
+
+    CreateUser:
+      type: object
+      required: [id, name, email, role, joinDate, isActive]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        email: { type: string }
+        passwordHash: { type: string }
+        role: { type: string, enum: [student, instructor, admin] }
+        joinDate: { type: string }
+        isActive: { type: boolean }
+
+    # ── Lesson schemas ──────────────────────────────────────────────────────
+    Lesson:
+      type: object
+      required: [id, courseId, title, duration, type, order]
+      properties:
+        id: { type: string }
+        courseId: { type: string }
+        title: { type: string }
+        duration: { type: string }
+        type: { type: string, enum: [video, reading, quiz] }
+        order: { type: integer }
+
+    CreateLesson:
+      type: object
+      required: [id, title, duration, type, order]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        duration: { type: string }
+        type: { type: string, enum: [video, reading, quiz] }
+        order: { type: integer }
+
+    # ── Course schemas ──────────────────────────────────────────────────────
+    Course:
+      type: object
+      required:
+        [
+          id,
+          title,
+          description,
+          instructorId,
+          instructorName,
+          category,
+          level,
+          duration,
+          color,
+          rating,
+          isPublished,
+          createdAt,
+          lessons,
+          enrolledStudents,
+        ]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        description: { type: string }
+        instructorId: { type: string }
+        instructorName: { type: string }
+        category: { type: string }
+        level: { type: string }
+        duration: { type: string }
+        color: { type: string }
+        rating: { type: number }
+        isPublished: { type: boolean }
+        createdAt: { type: string }
         lessons:
           type: array
           items:
@@ -177,91 +514,128 @@ components:
           type: array
           items:
             type: string
-        rating:
-          type: number
-        isPublished:
-          type: boolean
-        createdAt:
-          type: string
-        color:
-          type: string
+
+    CreateCourse:
+      type: object
       required:
-        - id
-        - title
-        - description
-        - instructorId
-        - instructorName
-        - category
-        - level
-        - duration
-        - lessons
-        - enrolledStudents
-        - rating
-        - isPublished
-        - createdAt
-        - color
-    CourseInput:
+        [
+          id,
+          title,
+          description,
+          instructorId,
+          instructorName,
+          category,
+          level,
+          duration,
+          color,
+          createdAt,
+        ]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        description: { type: string }
+        instructorId: { type: string }
+        instructorName: { type: string }
+        category: { type: string }
+        level: { type: string }
+        duration: { type: string }
+        color: { type: string }
+        rating: { type: number }
+        isPublished: { type: boolean }
+        createdAt: { type: string }
+
+    UpdateCourse:
       type: object
       properties:
-        title:
-          type: string
-        description:
-          type: string
-        instructorId:
-          type: string
-        instructorName:
-          type: string
-        category:
-          type: string
-        level:
-          type: string
-          enum:
-            - Beginner
-            - Intermediate
-            - Advanced
-        duration:
-          type: string
-        lessons:
+        title: { type: string }
+        description: { type: string }
+        category: { type: string }
+        level: { type: string }
+        duration: { type: string }
+        color: { type: string }
+        rating: { type: number }
+        isPublished: { type: boolean }
+
+    EnrollRequest:
+      type: object
+      required: [studentId]
+      properties:
+        studentId: { type: string }
+
+    # ── Assignment schemas ──────────────────────────────────────────────────
+    Assignment:
+      type: object
+      required:
+        [id, courseId, courseName, title, description, dueDate, maxScore]
+      properties:
+        id: { type: string }
+        courseId: { type: string }
+        courseName: { type: string }
+        title: { type: string }
+        description: { type: string }
+        dueDate: { type: string }
+        maxScore: { type: integer }
+
+    CreateAssignment:
+      type: object
+      required: [id, courseId, courseName, title, dueDate, maxScore]
+      properties:
+        id: { type: string }
+        courseId: { type: string }
+        courseName: { type: string }
+        title: { type: string }
+        description: { type: string }
+        dueDate: { type: string }
+        maxScore: { type: integer }
+
+    Submission:
+      type: object
+      required:
+        [id, assignmentId, studentId, studentName, answer, status, submittedAt]
+      properties:
+        id: { type: string }
+        assignmentId: { type: string }
+        studentId: { type: string }
+        studentName: { type: string }
+        answer: { type: string }
+        score: { type: integer }
+        status: { type: string, enum: [pending, submitted, graded] }
+        submittedAt: { type: string }
+
+    SubmitRequest:
+      type: object
+      required: [id, studentId, studentName, answer, submittedAt]
+      properties:
+        id: { type: string }
+        studentId: { type: string }
+        studentName: { type: string }
+        answer: { type: string }
+        submittedAt: { type: string }
+
+    GradeRequest:
+      type: object
+      required: [score]
+      properties:
+        score: { type: integer }
+
+    # ── Progress schemas ────────────────────────────────────────────────────
+    ProgressResult:
+      type: object
+      required: [userId, courseId, completedLessons, percentage]
+      properties:
+        userId: { type: string }
+        courseId: { type: string }
+        completedLessons:
           type: array
-          items:
-            $ref: "#/components/schemas/Lesson"
-        isPublished:
-          type: boolean
-        color:
-          type: string
-      required:
-        - title
-        - description
-    EnrollCourseInput:
+          items: { type: string }
+        percentage: { type: integer }
+
+    MarkProgressRequest:
       type: object
+      required: [id, userId, courseId, lessonId, completedAt]
       properties:
-        userId:
-          type: string
-      required:
-        - userId
-    Lesson:
-      type: object
-      properties:
-        id:
-          type: string
-        courseId:
-          type: string
-        title:
-          type: string
-        duration:
-          type: string
-        type:
-          type: string
-          enum:
-            - video
-            - reading
-            - quiz
-        order:
-          type: integer
-      required:
-        - id
-        - courseId
-        - title
-        - duration
-        - type
-        - order
+        id: { type: string }
+        userId: { type: string }
+        courseId: { type: string }
+        lessonId: { type: string }
+        completedAt: { type: string }

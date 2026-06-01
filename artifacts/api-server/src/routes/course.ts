@@ -1,330 +1,155 @@
 import { Router } from "express";
+import { eq, inArray } from "drizzle-orm";
 import {
-  CreateCourseBody,
-  DeleteCourseParams,
-  EnrollCourseBody,
-  EnrollCourseParams,
-  EnrollCourseResponse,
-  GetCourseParams,
-  GetCourseResponse,
-  GetCoursesResponse,
-  UpdateCourseBody,
-  UpdateCourseParams,
-  UpdateCourseResponse,
-  type Course,
-  type CourseInput,
-} from "@workspace/api-zod";
+  db,
+  coursesTable,
+  lessonsTable,
+  enrollmentsTable,
+  insertCourseSchema,
+  insertLessonSchema,
+} from "@workspace/db";
 
 const router = Router();
 
-let courses: Course[] = [
-  {
-    id: "course-1",
-    title: "Introduction to Python Programming",
-    description:
-      "Learn the fundamentals of Python programming from scratch. Cover variables, data types, loops, functions, and object-oriented programming.",
-    instructorId: "inst-1",
-    instructorName: "Dr. Sarah Chen",
-    category: "Programming",
-    level: "Beginner",
-    duration: "8 weeks",
-    color: "#3B5BDB",
-    rating: 4.8,
-    isPublished: true,
-    createdAt: "2025-01-15",
-    enrolledStudents: ["stu-1", "stu-3"],
-    lessons: [
-      {
-        id: "l1-1",
-        courseId: "course-1",
-        title: "Getting Started with Python",
-        duration: "45 min",
-        type: "video",
-        order: 1,
-      },
-      {
-        id: "l1-2",
-        courseId: "course-1",
-        title: "Variables and Data Types",
-        duration: "50 min",
-        type: "video",
-        order: 2,
-      },
-      {
-        id: "l1-3",
-        courseId: "course-1",
-        title: "Control Flow & Loops",
-        duration: "55 min",
-        type: "video",
-        order: 3,
-      },
-    ],
-  },
-  {
-    id: "course-2",
-    title: "UI/UX Design Fundamentals",
-    description:
-      "Master the principles of user interface and user experience design. Learn design thinking, wireframing, prototyping, and usability testing.",
-    instructorId: "inst-2",
-    instructorName: "Prof. James Wilson",
-    category: "Design",
-    level: "Beginner",
-    duration: "6 weeks",
-    color: "#E64980",
-    rating: 4.7,
-    isPublished: true,
-    createdAt: "2025-02-01",
-    enrolledStudents: ["stu-2"],
-    lessons: [
-      {
-        id: "l2-1",
-        courseId: "course-2",
-        title: "Design Thinking Process",
-        duration: "40 min",
-        type: "video",
-        order: 1,
-      },
-      {
-        id: "l2-2",
-        courseId: "course-2",
-        title: "Color Theory & Typography",
-        duration: "50 min",
-        type: "video",
-        order: 2,
-      },
-    ],
-  },
-  {
-    id: "course-3",
-    title: "Data Science with R",
-    description:
-      "Dive into data analysis, visualization, and statistical modeling using the R programming language.",
-    instructorId: "inst-1",
-    instructorName: "Dr. Sarah Chen",
-    category: "Data Science",
-    level: "Intermediate",
-    duration: "10 weeks",
-    color: "#0CA678",
-    rating: 4.6,
-    isPublished: true,
-    createdAt: "2025-01-20",
-    enrolledStudents: ["stu-2", "stu-3"],
-    lessons: [
-      {
-        id: "l3-1",
-        courseId: "course-3",
-        title: "Introduction to R",
-        duration: "45 min",
-        type: "video",
-        order: 1,
-      },
-      {
-        id: "l3-2",
-        courseId: "course-3",
-        title: "Data Wrangling with tidyverse",
-        duration: "60 min",
-        type: "video",
-        order: 2,
-      },
-    ],
-  },
-  {
-    id: "course-4",
-    title: "Web Development Bootcamp",
-    description:
-      "A comprehensive course covering HTML, CSS, JavaScript, React, and Node.js.",
-    instructorId: "inst-2",
-    instructorName: "Prof. James Wilson",
-    category: "Web Dev",
-    level: "Intermediate",
-    duration: "12 weeks",
-    color: "#F76707",
-    rating: 4.9,
-    isPublished: true,
-    createdAt: "2025-03-01",
-    enrolledStudents: ["stu-1"],
-    lessons: [
-      {
-        id: "l4-1",
-        courseId: "course-4",
-        title: "HTML & CSS Fundamentals",
-        duration: "50 min",
-        type: "video",
-        order: 1,
-      },
-      {
-        id: "l4-2",
-        courseId: "course-4",
-        title: "JavaScript Essentials",
-        duration: "65 min",
-        type: "video",
-        order: 2,
-      },
-    ],
-  },
-];
+type CourseRow = typeof coursesTable.$inferSelect;
 
-function createId(prefix: string) {
-  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+/** Attach lessons[] and enrolledStudents[] to an array of course rows. */
+async function composeCourses(rows: CourseRow[]) {
+  if (rows.length === 0) return [];
+  const ids = rows.map((c) => c.id);
+  const [lessons, enrollments] = await Promise.all([
+    db.select().from(lessonsTable).where(inArray(lessonsTable.courseId, ids)),
+    db
+      .select()
+      .from(enrollmentsTable)
+      .where(inArray(enrollmentsTable.courseId, ids)),
+  ]);
+  return rows.map((course) => ({
+    ...course,
+    lessons: lessons
+      .filter((l) => l.courseId === course.id)
+      .sort((a, b) => a.order - b.order),
+    enrolledStudents: enrollments
+      .filter((e) => e.courseId === course.id)
+      .map((e) => e.studentId),
+  }));
 }
 
-function buildCourse(input: CourseInput): Course {
-  const id = createId("course");
-
-  return {
-    id,
-    title: input.title,
-    description: input.description,
-    instructorId: input.instructorId ?? "inst-1",
-    instructorName: input.instructorName ?? "Dr. Sarah Chen",
-    category: input.category ?? "Programming",
-    level: input.level ?? "Beginner",
-    duration: input.duration ?? "4 weeks",
-    lessons:
-      input.lessons?.map((lesson, index) => ({
-        ...lesson,
-        courseId: id,
-        order: lesson.order ?? index + 1,
-      })) ?? [],
-    enrolledStudents: [],
-    rating: 0,
-    isPublished: input.isPublished ?? false,
-    createdAt: new Date().toISOString().slice(0, 10),
-    color: input.color ?? "#3B5BDB",
-  };
-}
-
-router.get("/", (_req, res) => {
-  const data = GetCoursesResponse.parse(courses);
-  res.json(data);
+// LIST — GET /api/courses
+router.get("/courses", async (_req, res) => {
+  const rows = await db
+    .select()
+    .from(coursesTable)
+    .orderBy(coursesTable.createdAt);
+  res.json(await composeCourses(rows));
 });
 
-router.get("/:id", (req, res) => {
-  const params = GetCourseParams.safeParse(req.params);
-
-  if (!params.success) {
-    res.status(400).json({ message: "Invalid course id", issues: params.error.issues });
+// READ ONE — GET /api/courses/:id
+router.get("/courses/:id", async (req, res) => {
+  const [row] = await db
+    .select()
+    .from(coursesTable)
+    .where(eq(coursesTable.id, req.params.id));
+  if (!row) {
+    res.status(404).json({ error: "Course not found" });
     return;
   }
-
-  const course = courses.find((item) => item.id === params.data.id);
-
-  if (!course) {
-    res.status(404).json({ message: "Course not found" });
-    return;
-  }
-
-  const data = GetCourseResponse.parse(course);
-  res.json(data);
+  const [composed] = await composeCourses([row]);
+  res.json(composed);
 });
 
-router.post("/", (req, res) => {
-  const body = CreateCourseBody.safeParse(req.body);
-
-  if (!body.success) {
-    res.status(400).json({ message: "Invalid course payload", issues: body.error.issues });
+// CREATE — POST /api/courses
+router.post("/courses", async (req, res) => {
+  const parsed = insertCourseSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
     return;
   }
-
-  const course = buildCourse(body.data);
-  courses = [...courses, course];
-
-  const data = GetCourseResponse.parse(course);
-  res.status(201).json(data);
+  const [created] = await db
+    .insert(coursesTable)
+    .values(parsed.data)
+    .returning();
+  res.status(201).json({ ...created, lessons: [], enrolledStudents: [] });
 });
 
-router.put("/:id", (req, res) => {
-  const params = UpdateCourseParams.safeParse(req.params);
-  const body = UpdateCourseBody.safeParse(req.body);
-
-  if (!params.success) {
-    res.status(400).json({ message: "Invalid course id", issues: params.error.issues });
+// UPDATE — PUT /api/courses/:id
+router.put("/courses/:id", async (req, res) => {
+  const parsed = insertCourseSchema.partial().safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
     return;
   }
-
-  if (!body.success) {
-    res.status(400).json({ message: "Invalid course payload", issues: body.error.issues });
+  const [updated] = await db
+    .update(coursesTable)
+    .set(parsed.data)
+    .where(eq(coursesTable.id, req.params.id))
+    .returning();
+  if (!updated) {
+    res.status(404).json({ error: "Course not found" });
     return;
   }
-
-  const index = courses.findIndex((item) => item.id === params.data.id);
-
-  if (index === -1) {
-    res.status(404).json({ message: "Course not found" });
-    return;
-  }
-
-  const current = courses[index];
-  const updated: Course = {
-    ...current,
-    ...body.data,
-    id: current.id,
-    createdAt: current.createdAt,
-    enrolledStudents: current.enrolledStudents,
-    rating: current.rating,
-    lessons:
-      body.data.lessons?.map((lesson, lessonIndex) => ({
-        ...lesson,
-        courseId: current.id,
-        order: lesson.order ?? lessonIndex + 1,
-      })) ?? current.lessons,
-  };
-
-  courses = courses.map((item) => (item.id === updated.id ? updated : item));
-
-  const data = UpdateCourseResponse.parse(updated);
-  res.json(data);
+  const [composed] = await composeCourses([updated]);
+  res.json(composed);
 });
 
-router.delete("/:id", (req, res) => {
-  const params = DeleteCourseParams.safeParse(req.params);
-
-  if (!params.success) {
-    res.status(400).json({ message: "Invalid course id", issues: params.error.issues });
-    return;
-  }
-
-  const exists = courses.some((item) => item.id === params.data.id);
-
-  if (!exists) {
-    res.status(404).json({ message: "Course not found" });
-    return;
-  }
-
-  courses = courses.filter((item) => item.id !== params.data.id);
+// DELETE — DELETE /api/courses/:id
+router.delete("/courses/:id", async (req, res) => {
+  await db.delete(coursesTable).where(eq(coursesTable.id, req.params.id));
   res.status(204).send();
 });
 
-router.post("/:id/enrollments", (req, res) => {
-  const params = EnrollCourseParams.safeParse(req.params);
-  const body = EnrollCourseBody.safeParse(req.body);
-
-  if (!params.success) {
-    res.status(400).json({ message: "Invalid course id", issues: params.error.issues });
+// ENROLL — POST /api/courses/:id/enroll
+router.post("/courses/:id/enroll", async (req, res) => {
+  const { studentId } = req.body as { studentId?: string };
+  if (!studentId) {
+    res.status(400).json({ error: "studentId is required" });
     return;
   }
-
-  if (!body.success) {
-    res.status(400).json({ message: "Invalid enrollment payload", issues: body.error.issues });
+  const existing = await db
+    .select()
+    .from(enrollmentsTable)
+    .where(eq(enrollmentsTable.courseId, req.params.id));
+  if (!existing.some((e) => e.studentId === studentId)) {
+    await db.insert(enrollmentsTable).values({
+      id: `enr-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      studentId,
+      courseId: req.params.id,
+      enrolledAt: new Date().toISOString().split("T")[0],
+    });
+  }
+  const [row] = await db
+    .select()
+    .from(coursesTable)
+    .where(eq(coursesTable.id, req.params.id));
+  if (!row) {
+    res.status(404).json({ error: "Course not found" });
     return;
   }
+  const [composed] = await composeCourses([row]);
+  res.json(composed);
+});
 
-  const course = courses.find((item) => item.id === params.data.id);
-
-  if (!course) {
-    res.status(404).json({ message: "Course not found" });
+// ADD LESSON — POST /api/courses/:id/lessons
+router.post("/courses/:id/lessons", async (req, res) => {
+  const parsed = insertLessonSchema.safeParse({
+    ...req.body,
+    courseId: req.params.id,
+  });
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
     return;
   }
+  const [created] = await db
+    .insert(lessonsTable)
+    .values(parsed.data)
+    .returning();
+  res.status(201).json(created);
+});
 
-  const enrolledStudents = course.enrolledStudents.includes(body.data.userId)
-    ? course.enrolledStudents
-    : [...course.enrolledStudents, body.data.userId];
-
-  const updated: Course = { ...course, enrolledStudents };
-  courses = courses.map((item) => (item.id === updated.id ? updated : item));
-
-  const data = EnrollCourseResponse.parse(updated);
-  res.json(data);
+// DELETE LESSON — DELETE /api/lessons/:id
+router.delete("/lessons/:id", async (req, res) => {
+  await db.delete(lessonsTable).where(eq(lessonsTable.id, req.params.id));
+  res.status(204).send();
 });
 
 export default router;
