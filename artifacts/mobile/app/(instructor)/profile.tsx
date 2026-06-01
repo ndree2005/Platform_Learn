@@ -33,7 +33,6 @@ export default function InstructorProfile() {
         onPress: async () => {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
           await logout();
-          router.replace("/(auth)/login");
         },
       },
     ]);

@@ -36,10 +36,10 @@ export default function AdminSettings() {
               "@ols_submissions",
               "@ols_progress",
               "@ols_users",
-              "@auth_user",
             ]);
+            await logout();
             Alert.alert("Reset Complete", "Data has been cleared. The app will restart.", [
-              { text: "OK", onPress: () => router.replace("/(auth)/login") },
+              { text: "OK", onPress: () => router.replace("/") },
             ]);
           },
         },
@@ -55,7 +55,6 @@ export default function AdminSettings() {
         onPress: async () => {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
           await logout();
-          router.replace("/(auth)/login");
         },
       },
     ]);

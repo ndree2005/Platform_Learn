@@ -6,6 +6,7 @@ import { SymbolView } from "expo-symbols";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { Platform, StyleSheet, View, useColorScheme } from "react-native";
+import RoleGate from "@/components/RoleGate";
 import { useColors } from "@/hooks/useColors";
 
 function NativeTabLayout() {
@@ -96,5 +97,9 @@ function ClassicTabLayout() {
 }
 
 export default function StudentTabLayout() {
-  return isLiquidGlassAvailable() ? <NativeTabLayout /> : <ClassicTabLayout />;
+  return (
+    <RoleGate role="student">
+      {isLiquidGlassAvailable() ? <NativeTabLayout /> : <ClassicTabLayout />}
+    </RoleGate>
+  );
 }
