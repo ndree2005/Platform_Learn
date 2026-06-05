@@ -5,13 +5,12 @@
  * LearnHub Online Learning System API
  * OpenAPI spec version: 0.1.0
  */
+import type { AuthUserRole } from './authUserRole';
 
-export interface CreateAssignment {
+export interface AuthUser {
   id: string;
-  courseId: string;
-  courseName: string;
-  title: string;
-  description?: string;
-  dueDate: string;
-  maxScore: number;
+  name: string;
+  email: string;
+  role: AuthUserRole;
+  isActive: boolean;
 }

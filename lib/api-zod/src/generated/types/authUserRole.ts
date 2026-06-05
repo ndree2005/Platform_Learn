@@ -6,10 +6,10 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type AppUserRole = typeof AppUserRole[keyof typeof AppUserRole];
+export type AuthUserRole = typeof AuthUserRole[keyof typeof AuthUserRole];
 
 
-export const AppUserRole = {
+export const AuthUserRole = {
   student: 'student',
   instructor: 'instructor',
   admin: 'admin',

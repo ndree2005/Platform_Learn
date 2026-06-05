@@ -10,6 +10,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication
   - name: users
     description: User management
   - name: courses
@@ -20,6 +22,48 @@ tags:
     description: Student progress tracking
 
 paths:
+  # ── Auth ─────────────────────────────────────────────────────────────────
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Authenticate a user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Authenticated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthUser"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Sign out (stateless — client discards session)
+      responses:
+        "200":
+          description: Logged out
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                required: [success]
+
   /healthz:
     get:
       operationId: healthCheck
@@ -334,18 +378,8 @@ paths:
       tags: [assignments]
       summary: List all submissions (optionally filtered by assignmentId or studentId)
       parameters:
-        - {
-            name: assignmentId,
-            in: query,
-            required: false,
-            schema: { type: string },
-          }
-        - {
-            name: studentId,
-            in: query,
-            required: false,
-            schema: { type: string },
-          }
+        - { name: assignmentId, in: query, required: false, schema: { type: string } }
+        - { name: studentId,    in: query, required: false, schema: { type: string } }
       responses:
         "200":
           description: List of submissions
@@ -384,7 +418,7 @@ paths:
       tags: [progress]
       summary: Get a student's progress in a course
       parameters:
-        - { name: userId, in: path, required: true, schema: { type: string } }
+        - { name: userId,   in: path, required: true, schema: { type: string } }
         - { name: courseId, in: path, required: true, schema: { type: string } }
       responses:
         "200":
@@ -415,6 +449,23 @@ paths:
 
 components:
   schemas:
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:    { type: string }
+        password: { type: string }
+
+    AuthUser:
+      type: object
+      required: [id, name, email, role, isActive]
+      properties:
+        id:       { type: string }
+        name:     { type: string }
+        email:    { type: string }
+        role:     { type: string, enum: [student, instructor, admin] }
+        isActive: { type: boolean }
+
     HealthStatus:
       type: object
       properties:
@@ -432,10 +483,10 @@ components:
       type: object
       required: [id, name, email, role, joinDate, isActive]
       properties:
-        id: { type: string }
-        name: { type: string }
-        email: { type: string }
-        role: { type: string, enum: [student, instructor, admin] }
+        id:       { type: string }
+        name:     { type: string }
+        email:    { type: string }
+        role:     { type: string, enum: [student, instructor, admin] }
         joinDate: { type: string }
         isActive: { type: boolean }
 
@@ -443,69 +494,53 @@ components:
       type: object
       required: [id, name, email, role, joinDate, isActive]
       properties:
-        id: { type: string }
-        name: { type: string }
-        email: { type: string }
+        id:           { type: string }
+        name:         { type: string }
+        email:        { type: string }
         passwordHash: { type: string }
-        role: { type: string, enum: [student, instructor, admin] }
-        joinDate: { type: string }
-        isActive: { type: boolean }
+        role:         { type: string, enum: [student, instructor, admin] }
+        joinDate:     { type: string }
+        isActive:     { type: boolean }
 
     # ── Lesson schemas ──────────────────────────────────────────────────────
     Lesson:
       type: object
       required: [id, courseId, title, duration, type, order]
       properties:
-        id: { type: string }
+        id:       { type: string }
         courseId: { type: string }
-        title: { type: string }
+        title:    { type: string }
         duration: { type: string }
-        type: { type: string, enum: [video, reading, quiz] }
-        order: { type: integer }
+        type:     { type: string, enum: [video, reading, quiz] }
+        order:    { type: integer }
 
     CreateLesson:
       type: object
       required: [id, title, duration, type, order]
       properties:
-        id: { type: string }
-        title: { type: string }
+        id:       { type: string }
+        title:    { type: string }
         duration: { type: string }
-        type: { type: string, enum: [video, reading, quiz] }
-        order: { type: integer }
+        type:     { type: string, enum: [video, reading, quiz] }
+        order:    { type: integer }
 
     # ── Course schemas ──────────────────────────────────────────────────────
     Course:
       type: object
-      required:
-        [
-          id,
-          title,
-          description,
-          instructorId,
-          instructorName,
-          category,
-          level,
-          duration,
-          color,
-          rating,
-          isPublished,
-          createdAt,
-          lessons,
-          enrolledStudents,
-        ]
+      required: [id, title, description, instructorId, instructorName, category, level, duration, color, rating, isPublished, createdAt, lessons, enrolledStudents]
       properties:
-        id: { type: string }
-        title: { type: string }
-        description: { type: string }
-        instructorId: { type: string }
-        instructorName: { type: string }
-        category: { type: string }
-        level: { type: string }
-        duration: { type: string }
-        color: { type: string }
-        rating: { type: number }
-        isPublished: { type: boolean }
-        createdAt: { type: string }
+        id:               { type: string }
+        title:            { type: string }
+        description:      { type: string }
+        instructorId:     { type: string }
+        instructorName:   { type: string }
+        category:         { type: string }
+        level:            { type: string }
+        duration:         { type: string }
+        color:            { type: string }
+        rating:           { type: number }
+        isPublished:      { type: boolean }
+        createdAt:        { type: string }
         lessons:
           type: array
           items:
@@ -517,44 +552,32 @@ components:
 
     CreateCourse:
       type: object
-      required:
-        [
-          id,
-          title,
-          description,
-          instructorId,
-          instructorName,
-          category,
-          level,
-          duration,
-          color,
-          createdAt,
-        ]
+      required: [id, title, description, instructorId, instructorName, category, level, duration, color, createdAt]
       properties:
-        id: { type: string }
-        title: { type: string }
-        description: { type: string }
-        instructorId: { type: string }
+        id:             { type: string }
+        title:          { type: string }
+        description:    { type: string }
+        instructorId:   { type: string }
         instructorName: { type: string }
-        category: { type: string }
-        level: { type: string }
-        duration: { type: string }
-        color: { type: string }
-        rating: { type: number }
-        isPublished: { type: boolean }
-        createdAt: { type: string }
+        category:       { type: string }
+        level:          { type: string }
+        duration:       { type: string }
+        color:          { type: string }
+        rating:         { type: number }
+        isPublished:    { type: boolean }
+        createdAt:      { type: string }
 
     UpdateCourse:
       type: object
       properties:
-        title: { type: string }
-        description: { type: string }
-        category: { type: string }
-        level: { type: string }
-        duration: { type: string }
-        color: { type: string }
-        rating: { type: number }
-        isPublished: { type: boolean }
+        title:          { type: string }
+        description:    { type: string }
+        category:       { type: string }
+        level:          { type: string }
+        duration:       { type: string }
+        color:          { type: string }
+        rating:         { type: number }
+        isPublished:    { type: boolean }
 
     EnrollRequest:
       type: object
@@ -565,51 +588,49 @@ components:
     # ── Assignment schemas ──────────────────────────────────────────────────
     Assignment:
       type: object
-      required:
-        [id, courseId, courseName, title, description, dueDate, maxScore]
+      required: [id, courseId, courseName, title, description, dueDate, maxScore]
       properties:
-        id: { type: string }
-        courseId: { type: string }
-        courseName: { type: string }
-        title: { type: string }
+        id:          { type: string }
+        courseId:    { type: string }
+        courseName:  { type: string }
+        title:       { type: string }
         description: { type: string }
-        dueDate: { type: string }
-        maxScore: { type: integer }
+        dueDate:     { type: string }
+        maxScore:    { type: integer }
 
     CreateAssignment:
       type: object
       required: [id, courseId, courseName, title, dueDate, maxScore]
       properties:
-        id: { type: string }
-        courseId: { type: string }
-        courseName: { type: string }
-        title: { type: string }
+        id:          { type: string }
+        courseId:    { type: string }
+        courseName:  { type: string }
+        title:       { type: string }
         description: { type: string }
-        dueDate: { type: string }
-        maxScore: { type: integer }
+        dueDate:     { type: string }
+        maxScore:    { type: integer }
 
     Submission:
       type: object
-      required:
-        [id, assignmentId, studentId, studentName, answer, status, submittedAt]
+      required: [id, assignmentId, studentId, studentName, answer, status, submittedAt]
       properties:
-        id: { type: string }
+        id:           { type: string }
         assignmentId: { type: string }
-        studentId: { type: string }
-        studentName: { type: string }
-        answer: { type: string }
-        score: { type: integer }
-        status: { type: string, enum: [pending, submitted, graded] }
-        submittedAt: { type: string }
+        studentId:    { type: string }
+        studentName:  { type: string }
+        answer:       { type: string }
+        score:        { type: integer }
+        status:       { type: string, enum: [pending, submitted, graded] }
+        submittedAt:  { type: string }
 
     SubmitRequest:
       type: object
       required: [id, studentId, studentName, answer, submittedAt]
       properties:
-        id: { type: string }
-        studentId: { type: string }
+        id:          { type: string }
+        studentId:   { type: string }
         studentName: { type: string }
-        answer: { type: string }
+        answer:      { type: string }
         submittedAt: { type: string }
 
     GradeRequest:
@@ -623,8 +644,8 @@ components:
       type: object
       required: [userId, courseId, completedLessons, percentage]
       properties:
-        userId: { type: string }
-        courseId: { type: string }
+        userId:           { type: string }
+        courseId:         { type: string }
         completedLessons:
           type: array
           items: { type: string }
@@ -634,8 +655,8 @@ components:
       type: object
       required: [id, userId, courseId, lessonId, completedAt]
       properties:
-        id: { type: string }
-        userId: { type: string }
-        courseId: { type: string }
-        lessonId: { type: string }
+        id:          { type: string }
+        userId:      { type: string }
+        courseId:    { type: string }
+        lessonId:    { type: string }
         completedAt: { type: string }
