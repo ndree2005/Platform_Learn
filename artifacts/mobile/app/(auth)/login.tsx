@@ -131,10 +131,9 @@ export default function LoginScreen() {
             </TouchableOpacity>
 
             <View style={styles.authSwitch}>
-              <Text style={[styles.authSwitchText, { color: colors.mutedForeground }]}>Belum punya akun?</Text>
-              <TouchableOpacity onPress={() => router.push("./register")} activeOpacity={0.75}>
-                <Text style={[styles.authSwitchLink, { color: colors.primary }]}>Daftar sebagai Student/Guru</Text>
-              </TouchableOpacity>
+              <Text style={[styles.authSwitchText, { color: colors.mutedForeground }]}>
+                Pendaftaran hanya bisa dilakukan oleh Admin
+              </Text>
             </View>
           </View>
 
