@@ -20,9 +20,9 @@ import { useAuth } from "@/context/AuthContext";
 import { useColors } from "@/hooks/useColors";
 
 const DEMO_ACCOUNTS = [
-  { label: "Student", email: "alex@ols.edu", password: "pass123", icon: "person" as const, color: "#0CA678" },
-  { label: "Guru", email: "sarah@ols.edu", password: "pass123", icon: "school" as const, color: "#3B5BDB" },
-  { label: "Admin", email: "admin@ols.edu", password: "admin123", icon: "shield-checkmark" as const, color: "#9B59B6" },
+  { label: "Student", email: "student@demo.com", password: "password123", icon: "person" as const, color: "#0CA678" },
+  { label: "Guru", email: "instructor@demo.com", password: "password123", icon: "school" as const, color: "#3B5BDB" },
+  { label: "Admin", email: "admin@demo.com", password: "password123", icon: "shield-checkmark" as const, color: "#9B59B6" },
 ];
 
 export default function LoginScreen() {
