@@ -54,9 +54,18 @@ function ClassicTabLayout() {
         },
         tabBarBackground: () =>
           isIOS ? (
-            <BlurView intensity={100} tint={isDark ? "dark" : "light"} style={StyleSheet.absoluteFill} />
+            <BlurView
+              intensity={100}
+              tint={isDark ? "dark" : "light"}
+              style={StyleSheet.absoluteFill}
+            />
           ) : isWeb ? (
-            <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.background }]} />
+            <View
+              style={[
+                StyleSheet.absoluteFill,
+                { backgroundColor: colors.background },
+              ]}
+            />
           ) : null,
       }}
     >
@@ -65,7 +74,11 @@ function ClassicTabLayout() {
         options={{
           title: "Dashboard",
           tabBarIcon: ({ color }) =>
-            isIOS ? <SymbolView name="chart.bar" tintColor={color} size={24} /> : <Ionicons name="bar-chart-outline" size={22} color={color} />,
+            isIOS ? (
+              <SymbolView name="chart.bar" tintColor={color} size={24} />
+            ) : (
+              <Ionicons name="bar-chart-outline" size={22} color={color} />
+            ),
         }}
       />
       <Tabs.Screen
@@ -73,7 +86,11 @@ function ClassicTabLayout() {
         options={{
           title: "Users",
           tabBarIcon: ({ color }) =>
-            isIOS ? <SymbolView name="person.3" tintColor={color} size={24} /> : <Ionicons name="people-outline" size={22} color={color} />,
+            isIOS ? (
+              <SymbolView name="person.3" tintColor={color} size={24} />
+            ) : (
+              <Ionicons name="people-outline" size={22} color={color} />
+            ),
         }}
       />
       <Tabs.Screen
@@ -81,7 +98,11 @@ function ClassicTabLayout() {
         options={{
           title: "Courses",
           tabBarIcon: ({ color }) =>
-            isIOS ? <SymbolView name="book.closed" tintColor={color} size={24} /> : <Ionicons name="book-outline" size={22} color={color} />,
+            isIOS ? (
+              <SymbolView name="book.closed" tintColor={color} size={24} />
+            ) : (
+              <Ionicons name="book-outline" size={22} color={color} />
+            ),
         }}
       />
       <Tabs.Screen
@@ -89,7 +110,11 @@ function ClassicTabLayout() {
         options={{
           title: "Settings",
           tabBarIcon: ({ color }) =>
-            isIOS ? <SymbolView name="gearshape" tintColor={color} size={24} /> : <Feather name="settings" size={22} color={color} />,
+            isIOS ? (
+              <SymbolView name="gearshape" tintColor={color} size={24} />
+            ) : (
+              <Feather name="settings" size={22} color={color} />
+            ),
         }}
       />
     </Tabs>
