@@ -1,3 +1,4 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { api } from "@/constants/api";
 
@@ -74,6 +75,7 @@ interface DataContextType {
   progress: Progress[];
   users: AppUser[];
   loading: boolean;
+  syncError: string | null;
   addCourse: (
     course: Omit<Course, "id" | "createdAt" | "enrolledStudents" | "rating">,
   ) => Promise<void>;
@@ -107,6 +109,34 @@ interface DataContextType {
 
 const DataContext = createContext<DataContextType | null>(null);
 
+const STORAGE_KEYS = {
+  courses: "@ols_courses",
+  assignments: "@ols_assignments",
+  submissions: "@ols_submissions",
+  progress: "@ols_progress",
+  users: "@ols_users",
+} as const;
+
+async function getStoredArray<T>(key: string): Promise<T[]> {
+  const data = await AsyncStorage.getItem(key);
+  if (!data) return [];
+
+  try {
+    const parsed = JSON.parse(data);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+async function saveStoredArray<T>(key: string, value: T[]) {
+  await AsyncStorage.setItem(key, JSON.stringify(value));
+}
+
+function describeError(err: unknown) {
+  return err instanceof Error ? err.message : String(err);
+}
+
 function genId() {
   return Date.now().toString() + Math.random().toString(36).slice(2, 9);
 }
@@ -118,63 +148,229 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const [progress, setProgress] = useState<Progress[]>([]);
   const [users, setUsers] = useState<AppUser[]>([]);
   const [loading, setLoading] = useState(true);
+  const [syncError, setSyncError] = useState<string | null>(null);
+  const [readyToPersist, setReadyToPersist] = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
+
     const load = async () => {
+      const failedResources: string[] = [];
+
       try {
-        const [c, a, s, p, u] = await Promise.all([
-          api.get<Course[]>("/courses"),
-          api.get<Assignment[]>("/assignments"),
-          api.get<Submission[]>("/submissions"),
-          api.get<Progress[]>("/progress/all"),
-          api.get<AppUser[]>("/users"),
-        ]);
-        setCourses(c);
-        setAssignments(a);
-        setSubmissions(s);
-        setProgress(p);
-        setUsers(u);
+        const [cachedCourses, cachedAssignments, cachedSubmissions, cachedProgress, cachedUsers] =
+          await Promise.all([
+            getStoredArray<Course>(STORAGE_KEYS.courses),
+            getStoredArray<Assignment>(STORAGE_KEYS.assignments),
+            getStoredArray<Submission>(STORAGE_KEYS.submissions),
+            getStoredArray<Progress>(STORAGE_KEYS.progress),
+            getStoredArray<AppUser>(STORAGE_KEYS.users),
+          ]);
+
+        if (cancelled) return;
+
+        setCourses(cachedCourses);
+        setAssignments(cachedAssignments);
+        setSubmissions(cachedSubmissions);
+        setProgress(cachedProgress);
+        setUsers(cachedUsers);
       } catch (err) {
-        console.error("DataContext load error:", err);
-      } finally {
+        console.error("DataContext cache load error:", err);
+      }
+
+      const results = await Promise.allSettled([
+        api.get<Course[]>("/courses"),
+        api.get<Assignment[]>("/assignments"),
+        api.get<Submission[]>("/submissions"),
+        api.get<Progress[]>("/progress/all"),
+        api.get<AppUser[]>("/users"),
+      ]);
+
+      if (cancelled) return;
+
+      const [coursesResult, assignmentsResult, submissionsResult, progressResult, usersResult] =
+        results;
+
+      if (coursesResult.status === "fulfilled") {
+        setCourses(coursesResult.value);
+      } else {
+        failedResources.push("courses");
+        console.error("DataContext courses sync error:", coursesResult.reason);
+      }
+
+      if (assignmentsResult.status === "fulfilled") {
+        setAssignments(assignmentsResult.value);
+      } else {
+        failedResources.push("assignments");
+        console.error("DataContext assignments sync error:", assignmentsResult.reason);
+      }
+
+      if (submissionsResult.status === "fulfilled") {
+        setSubmissions(submissionsResult.value);
+      } else {
+        failedResources.push("submissions");
+        console.error("DataContext submissions sync error:", submissionsResult.reason);
+      }
+
+      if (progressResult.status === "fulfilled") {
+        setProgress(progressResult.value);
+      } else {
+        failedResources.push("progress");
+        console.error("DataContext progress sync error:", progressResult.reason);
+      }
+
+      if (usersResult.status === "fulfilled") {
+        setUsers(usersResult.value);
+      } else {
+        failedResources.push("users");
+        console.error("DataContext users sync error:", usersResult.reason);
+      }
+
+      if (failedResources.length > 0) {
+        setSyncError(`Could not sync ${failedResources.join(", ")}. Using local data.`);
+      } else {
+        setSyncError(null);
+      }
+
+      if (!cancelled) {
+        setReadyToPersist(true);
         setLoading(false);
       }
     };
-    load();
+
+    load().catch((err) => {
+      if (cancelled) return;
+      console.error("DataContext load error:", err);
+      setSyncError(`Could not load data: ${describeError(err)}`);
+      setReadyToPersist(true);
+      setLoading(false);
+    });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
+
+  useEffect(() => {
+    if (!readyToPersist) return;
+    saveStoredArray(STORAGE_KEYS.courses, courses).catch((err) => {
+      console.error("DataContext courses cache save error:", err);
+    });
+  }, [courses, readyToPersist]);
+
+  useEffect(() => {
+    if (!readyToPersist) return;
+    saveStoredArray(STORAGE_KEYS.assignments, assignments).catch((err) => {
+      console.error("DataContext assignments cache save error:", err);
+    });
+  }, [assignments, readyToPersist]);
+
+  useEffect(() => {
+    if (!readyToPersist) return;
+    saveStoredArray(STORAGE_KEYS.submissions, submissions).catch((err) => {
+      console.error("DataContext submissions cache save error:", err);
+    });
+  }, [submissions, readyToPersist]);
+
+  useEffect(() => {
+    if (!readyToPersist) return;
+    saveStoredArray(STORAGE_KEYS.progress, progress).catch((err) => {
+      console.error("DataContext progress cache save error:", err);
+    });
+  }, [progress, readyToPersist]);
+
+  useEffect(() => {
+    if (!readyToPersist) return;
+    saveStoredArray(STORAGE_KEYS.users, users).catch((err) => {
+      console.error("DataContext users cache save error:", err);
+    });
+  }, [users, readyToPersist]);
+
+  const noteSyncError = (action: string, err: unknown) => {
+    console.error(`DataContext ${action} sync error:`, err);
+    setSyncError(`${action} saved locally but could not sync: ${describeError(err)}`);
+  };
+
+  const clearSyncError = () => {
+    setSyncError(null);
+  };
 
   // ── Courses ──────────────────────────────────────────────────────────────
 
   const addCourse = async (
     course: Omit<Course, "id" | "createdAt" | "enrolledStudents" | "rating">,
   ) => {
-    const newCourse = {
+    const newCourse: Course = {
       ...course,
       id: genId(),
       createdAt: new Date().toISOString().split("T")[0],
       rating: 0,
+      enrolledStudents: [],
     };
-    const created = await api.post<Course>("/courses", newCourse);
-    setCourses((prev) => [...prev, created]);
+    setCourses((prev) => [...prev, newCourse]);
+
+    try {
+      const created = await api.post<Course>("/courses", newCourse);
+      setCourses((prev) =>
+        prev.map((c) => (c.id === newCourse.id ? created : c)),
+      );
+      clearSyncError();
+    } catch (err) {
+      noteSyncError("Course", err);
+    }
   };
 
   const updateCourse = async (id: string, updates: Partial<Course>) => {
-    const updated = await api.put<Course>(`/courses/${id}`, updates);
     setCourses((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, ...updated } : c)),
+      prev.map((c) => (c.id === id ? { ...c, ...updates } : c)),
     );
+
+    try {
+      const updated = await api.put<Course>(`/courses/${id}`, updates);
+      setCourses((prev) =>
+        prev.map((c) => (c.id === id ? { ...c, ...updated } : c)),
+      );
+      clearSyncError();
+    } catch (err) {
+      noteSyncError("Course update", err);
+    }
   };
 
   const deleteCourse = async (id: string) => {
-    await api.delete(`/courses/${id}`);
     setCourses((prev) => prev.filter((c) => c.id !== id));
+
+    try {
+      await api.delete(`/courses/${id}`);
+      clearSyncError();
+    } catch (err) {
+      noteSyncError("Course delete", err);
+    }
   };
 
   const enrollInCourse = async (userId: string, courseId: string) => {
-    const updated = await api.post<Course>(`/courses/${courseId}/enroll`, {
-      studentId: userId,
+    setCourses((prev) =>
+      prev.map((c) =>
+        c.id === courseId && !c.enrolledStudents.includes(userId)
+          ? { ...c, enrolledStudents: [...c.enrolledStudents, userId] }
+          : c,
+      ),
+    );
+    setProgress((prev) => {
+      const exists = prev.some((p) => p.userId === userId && p.courseId === courseId);
+      return exists
+        ? prev
+        : [...prev, { userId, courseId, completedLessons: [], percentage: 0 }];
     });
-    setCourses((prev) => prev.map((c) => (c.id === courseId ? updated : c)));
+
+    try {
+      const updated = await api.post<Course>(`/courses/${courseId}/enroll`, {
+        studentId: userId,
+      });
+      setCourses((prev) => prev.map((c) => (c.id === courseId ? updated : c)));
+      clearSyncError();
+    } catch (err) {
+      noteSyncError("Enrollment", err);
+    }
   };
 
   // ── Assignments ──────────────────────────────────────────────────────────

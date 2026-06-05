@@ -36,10 +36,23 @@ async function composeCourses(rows: CourseRow[]) {
 }
 
 // LIST — GET /api/courses
+// Returns only published courses for students to browse
 router.get("/courses", async (_req, res) => {
   const rows = await db
     .select()
     .from(coursesTable)
+    .where(eq(coursesTable.isPublished, true))
+    .orderBy(coursesTable.createdAt);
+  res.json(await composeCourses(rows));
+});
+
+// LIST INSTRUCTOR COURSES — GET /api/courses/instructor/:instructorId
+// Returns ALL courses for a specific instructor (including unpublished drafts)
+router.get("/courses/instructor/:instructorId", async (req, res) => {
+  const rows = await db
+    .select()
+    .from(coursesTable)
+    .where(eq(coursesTable.instructorId, req.params.instructorId))
     .orderBy(coursesTable.createdAt);
   res.json(await composeCourses(rows));
 });

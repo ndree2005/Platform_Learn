@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Alert,
   Modal,
@@ -18,6 +18,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useData } from "@/context/DataContext";
 import { useColors } from "@/hooks/useColors";
 import CourseCard from "@/components/CourseCard";
+import { api } from "@/constants/api";
 
 const CATEGORIES = [
   "Programming",
@@ -42,6 +43,7 @@ export default function InstructorCourses() {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const { courses, addCourse, updateCourse, deleteCourse } = useData();
+  const [instructorCourses, setInstructorCourses] = useState<typeof courses>([]);
   const [showModal, setShowModal] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -50,7 +52,26 @@ export default function InstructorCourses() {
   const [duration, setDuration] = useState("8 weeks");
   const [selectedColor, setSelectedColor] = useState(COURSE_COLORS[0]);
 
-  const myCourses = courses.filter((c) => c.instructorId === user!.id);
+  // Fetch instructor-specific courses including unpublished ones
+  useEffect(() => {
+    const fetchInstructorCourses = async () => {
+      if (!user) return;
+      try {
+        const response = await api.get<typeof courses>(
+          `/courses/instructor/${user.id}`
+        );
+        setInstructorCourses(response);
+      } catch (error) {
+        console.error("Failed to fetch instructor courses:", error);
+        // Fallback to filtering from DataContext
+        const myCourses = courses.filter((c) => c.instructorId === user.id);
+        setInstructorCourses(myCourses);
+      }
+    };
+    fetchInstructorCourses();
+  }, [user, courses]);
+
+  const myCourses = instructorCourses;
 
   const handleAdd = () => {
     if (!title.trim() || !description.trim()) {
