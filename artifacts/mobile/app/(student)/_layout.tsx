@@ -21,7 +21,12 @@ function NativeTabLayout() {
         <Label>Courses</Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="assignments">
-        <Icon sf={{ default: "checkmark.circle", selected: "checkmark.circle.fill" }} />
+        <Icon
+          sf={{
+            default: "checkmark.circle",
+            selected: "checkmark.circle.fill",
+          }}
+        />
         <Label>Assignments</Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="profile">
@@ -43,7 +48,11 @@ function ClassicTabLayout() {
       screenOptions={{
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.mutedForeground,
-        headerShown: true,
+        headerStyle: {
+          backgroundColor: isIOS ? "transparent" : colors.background,
+        },
+        headerShadowVisible: false,
+        headerTintColor: "#fff",
         tabBarStyle: {
           position: "absolute",
           backgroundColor: isIOS ? "transparent" : colors.background,
@@ -54,9 +63,18 @@ function ClassicTabLayout() {
         },
         tabBarBackground: () =>
           isIOS ? (
-            <BlurView intensity={100} tint={isDark ? "dark" : "light"} style={StyleSheet.absoluteFill} />
+            <BlurView
+              intensity={100}
+              tint={isDark ? "dark" : "light"}
+              style={StyleSheet.absoluteFill}
+            />
           ) : isWeb ? (
-            <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.background }]} />
+            <View
+              style={[
+                StyleSheet.absoluteFill,
+                { backgroundColor: colors.background },
+              ]}
+            />
           ) : null,
       }}
     >
@@ -65,7 +83,11 @@ function ClassicTabLayout() {
         options={{
           title: "Home",
           tabBarIcon: ({ color }) =>
-            isIOS ? <SymbolView name="house" tintColor={color} size={24} /> : <Feather name="home" size={22} color={color} />,
+            isIOS ? (
+              <SymbolView name="house" tintColor={color} size={24} />
+            ) : (
+              <Feather name="home" size={22} color={color} />
+            ),
         }}
       />
       <Tabs.Screen
@@ -73,7 +95,11 @@ function ClassicTabLayout() {
         options={{
           title: "Courses",
           tabBarIcon: ({ color }) =>
-            isIOS ? <SymbolView name="book.closed" tintColor={color} size={24} /> : <Ionicons name="book-outline" size={22} color={color} />,
+            isIOS ? (
+              <SymbolView name="book.closed" tintColor={color} size={24} />
+            ) : (
+              <Ionicons name="book-outline" size={22} color={color} />
+            ),
         }}
       />
       <Tabs.Screen
@@ -81,7 +107,15 @@ function ClassicTabLayout() {
         options={{
           title: "Assignments",
           tabBarIcon: ({ color }) =>
-            isIOS ? <SymbolView name="checkmark.circle" tintColor={color} size={24} /> : <Ionicons name="checkmark-circle-outline" size={22} color={color} />,
+            isIOS ? (
+              <SymbolView name="checkmark.circle" tintColor={color} size={24} />
+            ) : (
+              <Ionicons
+                name="checkmark-circle-outline"
+                size={22}
+                color={color}
+              />
+            ),
         }}
       />
       <Tabs.Screen
@@ -89,7 +123,11 @@ function ClassicTabLayout() {
         options={{
           title: "Profile",
           tabBarIcon: ({ color }) =>
-            isIOS ? <SymbolView name="person" tintColor={color} size={24} /> : <Feather name="user" size={22} color={color} />,
+            isIOS ? (
+              <SymbolView name="person" tintColor={color} size={24} />
+            ) : (
+              <Feather name="user" size={22} color={color} />
+            ),
         }}
       />
     </Tabs>

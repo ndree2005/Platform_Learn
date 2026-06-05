@@ -17,11 +17,15 @@ function NativeTabLayout() {
         <Label>Dashboard</Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="courses">
-        <Icon sf={{ default: "rectangle.stack", selected: "rectangle.stack.fill" }} />
+        <Icon
+          sf={{ default: "rectangle.stack", selected: "rectangle.stack.fill" }}
+        />
         <Label>Courses</Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="assignments">
-        <Icon sf={{ default: "pencil.circle", selected: "pencil.circle.fill" }} />
+        <Icon
+          sf={{ default: "pencil.circle", selected: "pencil.circle.fill" }}
+        />
         <Label>Assignments</Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="profile">
@@ -41,9 +45,13 @@ function ClassicTabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: "#3B5BDB",
+        tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.mutedForeground,
-        headerShown: true,
+        headerStyle: {
+          backgroundColor: isIOS ? "transparent" : colors.background,
+        },
+        headerShadowVisible: false,
+        headerTintColor: "#fff",
         tabBarStyle: {
           position: "absolute",
           backgroundColor: isIOS ? "transparent" : colors.background,
@@ -54,9 +62,18 @@ function ClassicTabLayout() {
         },
         tabBarBackground: () =>
           isIOS ? (
-            <BlurView intensity={100} tint={isDark ? "dark" : "light"} style={StyleSheet.absoluteFill} />
+            <BlurView
+              intensity={100}
+              tint={isDark ? "dark" : "light"}
+              style={StyleSheet.absoluteFill}
+            />
           ) : isWeb ? (
-            <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.background }]} />
+            <View
+              style={[
+                StyleSheet.absoluteFill,
+                { backgroundColor: colors.background },
+              ]}
+            />
           ) : null,
       }}
     >
@@ -65,7 +82,11 @@ function ClassicTabLayout() {
         options={{
           title: "Dashboard",
           tabBarIcon: ({ color }) =>
-            isIOS ? <SymbolView name="house" tintColor={color} size={24} /> : <Feather name="home" size={22} color={color} />,
+            isIOS ? (
+              <SymbolView name="house" tintColor={color} size={24} />
+            ) : (
+              <Feather name="home" size={22} color={color} />
+            ),
         }}
       />
       <Tabs.Screen
@@ -73,7 +94,11 @@ function ClassicTabLayout() {
         options={{
           title: "My Courses",
           tabBarIcon: ({ color }) =>
-            isIOS ? <SymbolView name="rectangle.stack" tintColor={color} size={24} /> : <Ionicons name="layers-outline" size={22} color={color} />,
+            isIOS ? (
+              <SymbolView name="rectangle.stack" tintColor={color} size={24} />
+            ) : (
+              <Ionicons name="layers-outline" size={22} color={color} />
+            ),
         }}
       />
       <Tabs.Screen
@@ -81,7 +106,11 @@ function ClassicTabLayout() {
         options={{
           title: "Assignments",
           tabBarIcon: ({ color }) =>
-            isIOS ? <SymbolView name="pencil.circle" tintColor={color} size={24} /> : <Ionicons name="create-outline" size={22} color={color} />,
+            isIOS ? (
+              <SymbolView name="pencil.circle" tintColor={color} size={24} />
+            ) : (
+              <Ionicons name="create-outline" size={22} color={color} />
+            ),
         }}
       />
       <Tabs.Screen
@@ -89,7 +118,11 @@ function ClassicTabLayout() {
         options={{
           title: "Profile",
           tabBarIcon: ({ color }) =>
-            isIOS ? <SymbolView name="person" tintColor={color} size={24} /> : <Feather name="user" size={22} color={color} />,
+            isIOS ? (
+              <SymbolView name="person" tintColor={color} size={24} />
+            ) : (
+              <Feather name="user" size={22} color={color} />
+            ),
         }}
       />
     </Tabs>
