@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type Logout200 = {
+export interface Logout200 {
+  /** Logout success flag */
   success: boolean;
-};
+}

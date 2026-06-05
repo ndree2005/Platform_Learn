@@ -59,10 +59,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  success: { type: boolean }
-                required: [success]
+                $ref: "#/components/schemas/Logout200"
 
   /healthz:
     get:
@@ -449,22 +446,33 @@ paths:
 
 components:
   schemas:
+    AuthUserRole:
+      type: string
+      enum: [student, instructor, admin]
+      description: Role of an authenticated user
+
     LoginRequest:
       type: object
       required: [email, password]
       properties:
-        email:    { type: string }
-        password: { type: string }
+        email:    { type: string, description: "User email address" }
+        password: { type: string, description: "User password" }
 
     AuthUser:
       type: object
       required: [id, name, email, role, isActive]
       properties:
-        id:       { type: string }
-        name:     { type: string }
-        email:    { type: string }
-        role:     { type: string, enum: [student, instructor, admin] }
-        isActive: { type: boolean }
+        id:       { type: string, description: "User ID" }
+        name:     { type: string, description: "User full name" }
+        email:    { type: string, description: "User email address" }
+        role:     { $ref: "#/components/schemas/AuthUserRole" }
+        isActive: { type: boolean, description: "Account active status" }
+
+    Logout200:
+      type: object
+      required: [success]
+      properties:
+        success: { type: boolean, description: "Logout success flag" }
 
     HealthStatus:
       type: object

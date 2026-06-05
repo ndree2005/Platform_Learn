@@ -12,16 +12,16 @@ import * as zod from 'zod';
  * @summary Authenticate a user
  */
 export const LoginBody = zod.object({
-  "email": zod.string(),
-  "password": zod.string()
+  "email": zod.string().describe('User email address'),
+  "password": zod.string().describe('User password')
 })
 
 export const LoginResponse = zod.object({
-  "id": zod.string(),
-  "name": zod.string(),
-  "email": zod.string(),
-  "role": zod.enum(['student', 'instructor', 'admin']),
-  "isActive": zod.boolean()
+  "id": zod.string().describe('User ID'),
+  "name": zod.string().describe('User full name'),
+  "email": zod.string().describe('User email address'),
+  "role": zod.enum(['student', 'instructor', 'admin']).describe('Role of an authenticated user'),
+  "isActive": zod.boolean().describe('Account active status')
 })
 
 
@@ -29,7 +29,7 @@ export const LoginResponse = zod.object({
  * @summary Sign out (stateless — client discards session)
  */
 export const LogoutResponse = zod.object({
-  "success": zod.boolean()
+  "success": zod.boolean().describe('Logout success flag')
 })
 
 

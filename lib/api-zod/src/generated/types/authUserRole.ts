@@ -6,6 +6,9 @@
  * OpenAPI spec version: 0.1.0
  */
 
+/**
+ * Role of an authenticated user
+ */
 export type AuthUserRole = typeof AuthUserRole[keyof typeof AuthUserRole];
 
 

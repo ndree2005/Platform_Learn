@@ -8,9 +8,13 @@
 import type { AuthUserRole } from './authUserRole';
 
 export interface AuthUser {
+  /** User ID */
   id: string;
+  /** User full name */
   name: string;
+  /** User email address */
   email: string;
   role: AuthUserRole;
+  /** Account active status */
   isActive: boolean;
 }

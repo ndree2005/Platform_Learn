@@ -5,11 +5,9 @@
  * LearnHub Online Learning System API
  * OpenAPI spec version: 0.1.0
  */
-export interface LoginRequest {
-  email: string;
-  password: string;
-}
-
+/**
+ * Role of an authenticated user
+ */
 export type AuthUserRole = typeof AuthUserRole[keyof typeof AuthUserRole];
 
 
@@ -19,12 +17,28 @@ export const AuthUserRole = {
   admin: 'admin',
 } as const;
 
+export interface LoginRequest {
+  /** User email address */
+  email: string;
+  /** User password */
+  password: string;
+}
+
 export interface AuthUser {
+  /** User ID */
   id: string;
+  /** User full name */
   name: string;
+  /** User email address */
   email: string;
   role: AuthUserRole;
+  /** Account active status */
   isActive: boolean;
+}
+
+export interface Logout200 {
+  /** Logout success flag */
+  success: boolean;
 }
 
 export interface HealthStatus {
@@ -220,10 +234,6 @@ export interface MarkProgressRequest {
   lessonId: string;
   completedAt: string;
 }
-
-export type Logout200 = {
-  success: boolean;
-};
 
 export type GetSubmissionsParams = {
 assignmentId?: string;
