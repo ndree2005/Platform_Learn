@@ -5,9 +5,11 @@ import { Icon, Label, NativeTabs } from "expo-router/unstable-native-tabs";
 import { SymbolView } from "expo-symbols";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import React from "react";
-import { Platform, StyleSheet, View, useColorScheme } from "react-native";
+import { Platform, StyleSheet, TouchableOpacity, View } from "react-native";
 import RoleGate from "@/components/RoleGate";
 import { useColors } from "@/hooks/useColors";
+import { ThemeProvider, useTheme } from "@/context/ThemeContext";
+import { StatusBar } from "expo-status-bar";
 
 function NativeTabLayout() {
   return (
@@ -36,10 +38,39 @@ function NativeTabLayout() {
   );
 }
 
+function ThemeToggleButton() {
+  const colors = useColors();
+  const { isDark, toggleTheme } = useTheme();
+
+  return (
+    <TouchableOpacity
+      accessibilityLabel={isDark ? "Switch to light mode" : "Switch to dark mode"}
+      accessibilityRole="button"
+      onPress={toggleTheme}
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        marginRight: 16,
+        borderRadius: 20,
+        backgroundColor: colors.card,
+        borderWidth: 1,
+        borderColor: colors.border,
+      }}
+    >
+      <Ionicons
+        name={isDark ? "moon" : "sunny"}
+        size={18}
+        color={colors.primary}
+      />
+    </TouchableOpacity>
+  );
+}
+
 function ClassicTabLayout() {
   const colors = useColors();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const { isDark } = useTheme();
   const isIOS = Platform.OS === "ios";
   const isWeb = Platform.OS === "web";
   return (
@@ -51,7 +82,11 @@ function ClassicTabLayout() {
           backgroundColor: isIOS ? "transparent" : colors.background,
         },
         headerShadowVisible: false,
-        headerTintColor: "#fff",
+        headerTintColor: colors.foreground,
+        headerTitleStyle: {
+          color: colors.foreground,
+          fontWeight: "700",
+        },
         tabBarStyle: {
           position: "absolute",
           backgroundColor: isIOS ? "transparent" : colors.background,
@@ -117,6 +152,9 @@ function ClassicTabLayout() {
         name="profile"
         options={{
           title: "Profile",
+
+          headerRight: () => <ThemeToggleButton />,
+
           tabBarIcon: ({ color }) =>
             isIOS ? (
               <SymbolView name="person" tintColor={color} size={24} />
@@ -131,7 +169,18 @@ function ClassicTabLayout() {
 
 export default function InstructorTabLayout() {
   return (
+    <ThemeProvider storageKey="platform-learn-instructor-theme">
+      <InstructorTabContent />
+    </ThemeProvider>
+  );
+}
+
+function InstructorTabContent() {
+  const { isDark } = useTheme();
+
+  return (
     <RoleGate role="instructor">
+      <StatusBar style={isDark ? "light" : "dark"} />
       {isLiquidGlassAvailable() ? <NativeTabLayout /> : <ClassicTabLayout />}
     </RoleGate>
   );

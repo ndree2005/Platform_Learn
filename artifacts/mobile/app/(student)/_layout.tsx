@@ -1,12 +1,14 @@
 import { BlurView } from "expo-blur";
+import { StatusBar } from "expo-status-bar";
 import { isLiquidGlassAvailable } from "expo-glass-effect";
 import { Tabs } from "expo-router";
 import { Icon, Label, NativeTabs } from "expo-router/unstable-native-tabs";
 import { SymbolView } from "expo-symbols";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import React from "react";
-import { Platform, StyleSheet, View, useColorScheme } from "react-native";
+import { Platform, StyleSheet, TouchableOpacity, View } from "react-native";
 import RoleGate from "@/components/RoleGate";
+import { ThemeProvider, useTheme } from "@/context/ThemeContext";
 import { useColors } from "@/hooks/useColors";
 
 function NativeTabLayout() {
@@ -37,10 +39,37 @@ function NativeTabLayout() {
   );
 }
 
+function ThemeToggleButton() {
+  const colors = useColors();
+  const { isDark, toggleTheme } = useTheme();
+
+  return (
+    <TouchableOpacity
+      onPress={toggleTheme}
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        marginRight: 16,
+        borderRadius: 20,
+        backgroundColor: colors.card,
+        borderWidth: 1,
+        borderColor: colors.border,
+      }}
+    >
+      <Ionicons
+        name={isDark ? "moon" : "sunny"}
+        size={18}
+        color={colors.primary}
+      />
+    </TouchableOpacity>
+  );
+}
+
 function ClassicTabLayout() {
   const colors = useColors();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const { isDark } = useTheme();
   const isIOS = Platform.OS === "ios";
   const isWeb = Platform.OS === "web";
   return (
@@ -52,7 +81,11 @@ function ClassicTabLayout() {
           backgroundColor: isIOS ? "transparent" : colors.background,
         },
         headerShadowVisible: false,
-        headerTintColor: "#fff",
+        headerTintColor: colors.foreground,
+        headerTitleStyle: {
+          color: colors.foreground,
+          fontWeight: "700",
+        },
         tabBarStyle: {
           position: "absolute",
           backgroundColor: isIOS ? "transparent" : colors.background,
@@ -82,6 +115,25 @@ function ClassicTabLayout() {
         name="index"
         options={{
           title: "Home",
+
+          headerRight: () => (
+            <TouchableOpacity
+              onPress={() => {
+                console.log("Notification pressed");
+                // router.push("/notifications");
+              }}
+              style={{
+                marginRight: 16,
+              }}
+            >
+              <Ionicons
+                name="notifications-outline"
+                size={24}
+                color={colors.foreground}
+              />
+            </TouchableOpacity>
+          ),
+
           tabBarIcon: ({ color }) =>
             isIOS ? (
               <SymbolView name="house" tintColor={color} size={24} />
@@ -122,6 +174,10 @@ function ClassicTabLayout() {
         name="profile"
         options={{
           title: "Profile",
+
+          // tombol dark/light mode hanya di halaman profile
+          headerRight: () => <ThemeToggleButton />,
+
           tabBarIcon: ({ color }) =>
             isIOS ? (
               <SymbolView name="person" tintColor={color} size={24} />
@@ -136,7 +192,18 @@ function ClassicTabLayout() {
 
 export default function StudentTabLayout() {
   return (
+    <ThemeProvider storageKey="platform-learn-student-theme">
+      <StudentTabContent />
+    </ThemeProvider>
+  );
+}
+
+function StudentTabContent() {
+  const { isDark } = useTheme();
+
+  return (
     <RoleGate role="student">
+      <StatusBar style={isDark ? "light" : "dark"} />
       {isLiquidGlassAvailable() ? <NativeTabLayout /> : <ClassicTabLayout />}
     </RoleGate>
   );
