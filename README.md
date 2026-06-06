@@ -133,19 +133,6 @@ Expo akan berjalan di localhost port `8081`. Aplikasi memakai Expo Router dan me
 - `/(admin)` untuk dashboard admin
 - `/course/[id]` untuk detail course
 
-### Demo Accounts
-
-Login demo tersimpan di `artifacts/mobile/context/AuthContext.tsx`.
-
-| Role | Email | Password |
-| --- | --- | --- |
-| Admin | `admin@ols.edu` | `admin123` |
-| Instructor | `sarah@ols.edu` | `pass123` |
-| Instructor | `james@ols.edu` | `pass123` |
-| Student | `alex@ols.edu` | `pass123` |
-| Student | `maria@ols.edu` | `pass123` |
-| Student | `liam@ols.edu` | `pass123` |
-
 Data course, assignment, submission, progress, dan user demo berada di `artifacts/mobile/context/DataContext.tsx`. Perubahan data di mobile disimpan lokal menggunakan `AsyncStorage`.
 
 ## Database
